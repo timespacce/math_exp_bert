@@ -502,11 +502,8 @@ def build_model():
     return
 
 
-def train_model():
-    global model, optimizer, train_loss, train_accuracy, ckpt_manager, data_file, train, buffer_size
-
-    if not train:
-        return
+def load_data():
+    global data_file, batch_size, buffer_size, max_len, max_pred_per_seq
 
     tokenized_sequences = []
     input_masks = []
@@ -520,27 +517,44 @@ def train_model():
         sequences = stream.readlines()
         stream.close()
 
-    for sentence in sequences:
+    def assert_sequence_length(width, index):
+        if width != max_len:
+            print("ERROR at {} got {} != is {}".format(index, width, max_len))
+            exit(1)
+
+    def assert_mask_length(width, index):
+        if width != max_pred_per_seq:
+            print("ERROR at {} got {} != is {}".format(index, width, max_pred_per_seq))
+            exit(1)
+
+    for index, sentence in enumerate(sequences):
         if len(tokenized_sequences) >= buffer_size:
             break
+
         tokenized_sequence, input_mask, segment_ids, mask_indices, tokenized_mask, mask_weights, label = sentence.split(";")
 
         tokenized_sequence = list(map(float, tokenized_sequence.split(" ")[:-1]))
+        assert_sequence_length(len(tokenized_sequence), index)
         tokenized_sequences.append(tokenized_sequence)
 
         input_mask = list(map(float, input_mask.split(" ")[:-1]))
+        assert_sequence_length(len(input_mask), index)
         input_masks.append(input_mask)
 
         segment_ids = list(map(int, segment_ids.split(" ")[:-1]))
+        assert_sequence_length(len(segment_ids), index)
         segments_ids.append(segment_ids)
 
         mask_indices = list(map(int, mask_indices.split(" ")[:-1]))
+        assert_mask_length(len(mask_indices), index)
         masks_indices.append(mask_indices)
 
         mask_weights = list(map(float, mask_weights.split(" ")[:-1]))
+        assert_mask_length(len(mask_weights), index)
         masks_weights.append(mask_weights)
 
         tokenized_mask = list(map(int, tokenized_mask.split(" ")[:-1]))
+        assert_mask_length(len(tokenized_mask), index)
         tokenized_masks.append(tokenized_mask)
 
         label = int(label)
@@ -564,8 +578,16 @@ def train_model():
     tf_train_dataset = tf.data.Dataset.zip(
             (tf_tokenized_sequences, tf_input_masks, tf_segments_ids, tf_mask_indices, tf_tokenized_masks, tf_masks_weights, tf_labels))
 
-    for tokenized_sequence, input_mask, segment_ids, mask_indices, tokenized_mask, mask_weights, label in tf_train_dataset:
-        arr = tokenized_sequence.numpy()
+    return tf_train_dataset
+
+
+def train_model():
+    global model, optimizer, train_loss, train_accuracy, ckpt_manager, data_file, train, max_len, batch_size, buffer_size
+
+    if not train:
+        return
+
+    tf_train_dataset = load_data()
 
     train_step_signature = [
             tf.TensorSpec(shape=(None, None), dtype=tf.int64),
@@ -694,7 +716,9 @@ def inference():
         tokens = tf.argmax(y_hat_mask, axis=2)
         same_paper = tf.argmax(y_hat_ns, axis=1)
         mask_len = mask_weights.numpy().sum(axis=1)
-        entry = (tokenized_mask.numpy(), tokens.numpy(), mask_len, label.numpy(), same_paper.numpy(), mask_accuracy.numpy(), label_accuracy.numpy())
+        entry = (
+                tokenized_mask.numpy(), tokens.numpy(), mask_len, label.numpy(), same_paper.numpy(), mask_accuracy.numpy(),
+                label_accuracy.numpy())
         validation.append(entry)
 
     validation.sort(key=lambda x: x[5] + x[6], reverse=True)

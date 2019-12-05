@@ -1,0 +1,6 @@
+name: math_exp_bert_env
+dependencies:
+ - python=3.6
+ - tensorflow-gpu=2.0.0
+ - tensorflow-datasets
+ - numpy

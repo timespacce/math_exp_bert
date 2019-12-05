@@ -485,7 +485,7 @@ def build_model():
     optimizer = tf.keras.optimizers.Adam(learning_rate, beta_1=0.9, beta_2=0.98, epsilon=1e-6)
 
     token_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='none')
-    ns_loss_func = tf.keras.losses.CategoricalCrossentropy()
+    ns_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='sum')
 
     train_loss = tf.keras.metrics.Mean(name='train_loss')
     train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
@@ -589,55 +589,65 @@ def train_model():
 
     tf_train_dataset = load_data()
 
-    train_step_signature = [
-            tf.TensorSpec(shape=(None, None), dtype=tf.int64),
-            tf.TensorSpec(shape=(None, None), dtype=tf.int64),
-    ]
+    strategy = tf.distribute.MirroredStrategy()
 
-    @tf.function(input_signature=train_step_signature)
-    def train_step(tokenized_sequence, input_mask, segment_ids, mask_indices, y_mask, y_mask_w, y_ns):
+    with strategy.scope():
+        @tf.function
+        def train_step(tokenized_sequence, input_mask, segment_ids, mask_indices, y_mask, y_mask_w, y_ns):
 
-        enc_padding_mask = create_mask(input_mask)
+            enc_padding_mask = create_mask(input_mask)
 
-        with tf.GradientTape() as tape:
-            y_hat_mask, y_hat_ns = model(tokenized_sequence, enc_padding_mask, input_mask, segment_ids, mask_indices)
-            loss, mask_accuracy, label_accuracy = loss_function(y_mask, y_mask_w, y_hat_mask, y_ns, y_hat_ns)
+            with tf.GradientTape() as tape:
+                y_hat_mask, y_hat_ns = model(tokenized_sequence, enc_padding_mask, input_mask, segment_ids, mask_indices)
+                loss, mask_accuracy, label_accuracy = loss_function(y_mask, y_mask_w, y_hat_mask, y_ns, y_hat_ns)
+                gradients = tape.gradient(loss, model.trainable_variables)
+                optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
-        gradients = tape.gradient(loss, model.trainable_variables)
-        optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+            return loss, mask_accuracy, label_accuracy
 
-        return loss, mask_accuracy, label_accuracy
+        @tf.function
+        def distributed_train_epoch(tokenized_sequence, input_mask, segment_ids, mask_indices, y_mask, y_mask_w, y_ns):
+            per_replica = strategy.experimental_run_v2(train_step, args=(
+                    tokenized_sequence,
+                    input_mask,
+                    segment_ids,
+                    mask_indices,
+                    y_mask,
+                    y_mask_w,
+                    y_ns))
+            # total = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica, axis=None)
+            return per_replica
 
-    for epoch in range(epochs):
-        start = time.time()
+        for epoch in range(epochs):
+            start = time.time()
 
-        loss_acc = 0
-        mask_accuracy_acc = 0
-        label_accuracy_acc = 0
-        count = 0
+            loss_acc = 0
+            mask_accuracy_acc = 0
+            label_accuracy_acc = 0
+            count = 0
 
-        for batch, (tokenized_sequence, input_mask, segment_ids, mask_indices, tokenized_mask, mask_weights, label) in enumerate(
-                tf_train_dataset):
-            loss, mask_accuracy, label_accuracy = train_step(tokenized_sequence, input_mask, segment_ids, mask_indices,
-                                                             tokenized_mask, mask_weights, label)
-            loss_acc += loss
-            mask_accuracy_acc += mask_accuracy
-            label_accuracy_acc += label_accuracy
-            count += 1
+            for batch, (tokenized_sequence, input_mask, segment_ids, mask_indices, tokenized_mask, mask_weights, label) in enumerate(
+                    tf_train_dataset):
+                loss, mask_accuracy, label_accuracy = distributed_train_epoch(tokenized_sequence, input_mask, segment_ids, mask_indices,
+                                                                              tokenized_mask, mask_weights, label)
+                loss_acc += loss
+                mask_accuracy_acc += mask_accuracy
+                label_accuracy_acc += label_accuracy
+                count += 1
 
-        loss_acc /= count
-        mask_accuracy_acc /= count
-        label_accuracy_acc /= count
+            loss_acc /= count
+            mask_accuracy_acc /= count
+            label_accuracy_acc /= count
 
-        template = 'Epoch {} Loss {:.4f} Mask / Label Accuracy {:.4f} / {:.4f}'
-        console_output = template.format(epoch, loss_acc, mask_accuracy_acc, label_accuracy_acc)
-        print(console_output)
+            template = 'Epoch {} Loss {:.4f} Mask / Label Accuracy {:.4f} / {:.4f}'
+            console_output = template.format(epoch, loss_acc, mask_accuracy_acc, label_accuracy_acc)
+            print(console_output)
 
-        if (epoch + 1) % 5 == 0:
-            ckpt_save_path = ckpt_manager.save()
-            print('Saving checkpoint for epoch {} at {}'.format(epoch + 1, ckpt_save_path))
+            if (epoch + 1) % 5 == 0:
+                ckpt_save_path = ckpt_manager.save()
+                print('Saving checkpoint for epoch {} at {}'.format(epoch + 1, ckpt_save_path))
 
-        print('Time taken for 1 epoch: {} secs\n'.format(time.time() - start))
+            print('Time taken for 1 epoch: {} secs\n'.format(time.time() - start))
 
 
 def inference():
@@ -762,25 +772,6 @@ def run_bert():
     build_model()
     train_model()
     inference()
-    return
-
-
-def validate_dense():
-    d_model = 128
-    input = tf.random.uniform((32, 40, 64))
-
-    # I (40, 64) * W (64, 128)
-    dense = tf.keras.layers.Dense(d_model)
-
-    # (32, 40, 128)
-    output = dense(input)
-
-
-def run_tokenizer():
-    vocab_file = "vocabs\\bert_vocab.subwords.txt"
-    seq = "Its NOT Dawsons Creek , theyre not graceful , cool witty characters who breeze through sexuality with effortless knowledge ."
-    tokenizer = Tokenizer(vocab_file)
-    tokenized_seq = tokenizer.tokenize_seq(seq)
     return
 
 

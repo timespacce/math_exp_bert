@@ -34,6 +34,8 @@ model = None
 optimizer = None
 ckpt_manager = None
 
+strategy = None
+
 token_loss_func = None
 ns_loss_func = None
 
@@ -469,30 +471,32 @@ def load_configuration():
 
 
 def build_model():
-    global max_len, model, optimizer, ckpt_manager, token_loss_func, ns_loss_func, train_loss, train_accuracy
+    global max_len, strategy, model, optimizer, ckpt_manager, token_loss_func, ns_loss_func, train_loss, train_accuracy
+
+    strategy = tf.distribute.MirroredStrategy()
 
     tokenizer = Tokenizer(vocab_folder)
     vocab_size = tokenizer.vocab_size
 
-    model = Transformer(num_layers=num_layers,
-                        d_model=d_model,
-                        num_heads=num_heads,
-                        dff=dff,
-                        input_vocab_size=vocab_size,
-                        target_vocab_size=vocab_size,
-                        rate=rate)
+    with strategy.scope():
+        model = Transformer(num_layers=num_layers,
+                            d_model=d_model,
+                            num_heads=num_heads,
+                            dff=dff,
+                            input_vocab_size=vocab_size,
+                            target_vocab_size=vocab_size,
+                            rate=rate)
 
-    optimizer = tf.keras.optimizers.Adam(learning_rate, beta_1=0.9, beta_2=0.98, epsilon=1e-6)
+        optimizer = tf.keras.optimizers.Adam(learning_rate, beta_1=0.9, beta_2=0.98, epsilon=1e-6)
 
-    token_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='none')
-    ns_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='sum')
+        token_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='none')
+        ns_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='sum')
 
-    train_loss = tf.keras.metrics.Mean(name='train_loss')
-    train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
+        train_loss = tf.keras.metrics.Mean(name='train_loss')
+        train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
 
-    ckpt = tf.train.Checkpoint(model=model,
-                               optimizer=optimizer)
-    ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_folder, max_to_keep=5)
+        ckpt = tf.train.Checkpoint(model=model, optimizer=optimizer)
+        ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_folder, max_to_keep=5)
 
     # if a checkpoint exists, restore the latest checkpoint.
     if ckpt_manager.latest_checkpoint:
@@ -582,14 +586,12 @@ def load_data():
 
 
 def train_model():
-    global model, optimizer, train_loss, train_accuracy, ckpt_manager, data_file, train, max_len, batch_size, buffer_size
+    global strategy, model, optimizer, train_loss, train_accuracy, ckpt_manager, data_file, train, max_len, batch_size, buffer_size
 
     if not train:
         return
 
     tf_train_dataset = load_data()
-
-    strategy = tf.distribute.MirroredStrategy()
 
     with strategy.scope():
         @tf.function
@@ -600,8 +602,9 @@ def train_model():
             with tf.GradientTape() as tape:
                 y_hat_mask, y_hat_ns = model(tokenized_sequence, enc_padding_mask, input_mask, segment_ids, mask_indices)
                 loss, mask_accuracy, label_accuracy = loss_function(y_mask, y_mask_w, y_hat_mask, y_ns, y_hat_ns)
-                gradients = tape.gradient(loss, model.trainable_variables)
-                optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+
+            gradients = tape.gradient(loss, model.trainable_variables)
+            optimizer.apply_gradients(zip(gradients, model.trainable_variables))
 
             return loss, mask_accuracy, label_accuracy
 

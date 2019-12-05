@@ -411,6 +411,7 @@ def loss_function(y_mask, y_mask_w, y_hat_mask, label, ns_output):
 
     ns_one_hot = tf.one_hot(label, 2)
     ns_loss_ps = ns_loss_func(ns_one_hot, ns_output)
+    ns_loss_ps = tf.nn.compute_average_loss(ns_loss_ps, global_batch_size=batch_size)
 
     train_loss = token_loss_ps + ns_loss_ps
 
@@ -490,7 +491,7 @@ def build_model():
         optimizer = tf.keras.optimizers.Adam(learning_rate, beta_1=0.9, beta_2=0.98, epsilon=1e-6)
 
         token_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='none')
-        ns_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='sum')
+        ns_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='none')
 
         train_loss = tf.keras.metrics.Mean(name='train_loss')
         train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')

@@ -587,7 +587,7 @@ def load_data():
 
 
 def train_model():
-    global strategy, model, optimizer, train_loss, train_accuracy, ckpt_manager, data_file, train, max_len, batch_size, buffer_size
+    global strategy, model, optimizer, train_loss, train_accuracy, ckpt_manager, data_file, train, max_len, batch_size, buffer_size, epochs
 
     if not train:
         return

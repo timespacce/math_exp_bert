@@ -7,7 +7,6 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
-from mask_loss import MaskLoss
 from tokenizer import Tokenizer
 from transformer import Transformer
 

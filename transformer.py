@@ -38,9 +38,9 @@ def create_look_ahead_mask(size):
     return mask  # (seq_len, seq_len)
 
 
-def create_mask(batch_size, input_mask):
+def create_mask(b_p_gpu, input_mask):
     # Encoder padding mask
-    dim_0 = batch_size
+    dim_0 = b_p_gpu
     dim_1 = input_mask.shape[1]
     broadcast = tf.ones((dim_0, dim_1, 1), dtype=np.float32)
     mask = tf.reshape(input_mask, shape=(dim_0, 1, dim_1))
@@ -51,10 +51,10 @@ def create_mask(batch_size, input_mask):
 
 class Transformer(tf.keras.Model):
 
-    def __init__(self, batch_size, num_layers, d_model, num_heads, dff, input_vocab_size, target_vocab_size, rate):
+    def __init__(self, b_p_gpu, num_layers, d_model, num_heads, dff, input_vocab_size, target_vocab_size, rate):
         super(Transformer, self).__init__()
 
-        self.batch_size = batch_size
+        self.b_p_gpu = b_p_gpu
         self.num_layers = num_layers
         self.d_model = d_model
         self.num_heads = num_heads
@@ -103,7 +103,7 @@ class Transformer(tf.keras.Model):
         y_hat = self.pre_bn(y_hat)  # (batch_size, sequence_len, embedding_len)
         y_hat = self.pre_do(y_hat)  # (batch_size, sequence_len, embedding_len)
 
-        enc_pad_mas = create_mask(self.batch_size, in_mask)
+        enc_pad_mas = create_mask(self.b_p_gpu, in_mask)
         y_hat = self.encoder(y_hat, enc_pad_mas)  # (batch_size, sequence_len, embedding_len)
 
         y_hat_mask = tf.gather(y_hat, in_ind, batch_dims=1)  # (batch_size, mask_len, embedding_len)

@@ -26,6 +26,8 @@ rate = None
 epochs = None
 learning_rate = None
 data_file = None
+gpu_count = None
+b_p_gpu = None
 
 train = None
 infer = None
@@ -394,7 +396,8 @@ def create_mask(input_mask):
 
 def load_configuration():
     global checkpoint_folder, vocab_folder, max_len, batch_size, buffer_size, \
-        mask_prob, max_pred_per_seq, num_layers, d_model, num_heads, dff, rate, epochs, learning_rate, data_file, train, infer, eager
+        mask_prob, max_pred_per_seq, num_layers, d_model, num_heads, dff, rate, \
+        epochs, learning_rate, data_file, train, infer, eager, gpu_count, b_p_gpu
 
     with open("configuration.json") as fp:
         configuration = json.load(fp)
@@ -440,9 +443,16 @@ def load_configuration():
         tf.config.experimental_run_functions_eagerly(True)
         tf.executing_eagerly()
 
+    gpu_count = tf.config.experimental.list_logical_devices('GPU')
+    gpu_count = len(gpu_count)
+    print("GPU_COUNT = {0}".format(gpu_count))
+
+    b_p_gpu = int(batch_size / gpu_count)
+    print("BATCHES_PRO_GPU = {0}".format(b_p_gpu))
+
 
 def build_model():
-    global max_len, strategy, model, optimizer, ckpt_manager, batch_size, max_pred_per_seq
+    global max_len, gpu_count, strategy, model, optimizer, ckpt_manager, batch_size, max_pred_per_seq
 
     strategy = tf.distribute.MirroredStrategy()
 
@@ -450,7 +460,7 @@ def build_model():
     vocab_size = tokenizer.vocab_size
 
     with strategy.scope():
-        model = Transformer(batch_size=batch_size,
+        model = Transformer(b_p_gpu=b_p_gpu,
                             num_layers=num_layers,
                             d_model=d_model,
                             num_heads=num_heads,
@@ -460,8 +470,6 @@ def build_model():
                             rate=rate)
 
         optimizer = tf.keras.optimizers.Adam(learning_rate, beta_1=0.9, beta_2=0.98, epsilon=1e-6)
-
-        loss_function = MaskLoss(batch_size=batch_size)
 
         l1 = L1(batch_size=batch_size, pred_len=max_pred_per_seq)
         l2 = L2(batch_size=batch_size)

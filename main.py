@@ -471,8 +471,6 @@ def build_model():
                             target_vocab_size=vocab_size,
                             rate=rate)
 
-        model.load_weights(checkpoint_folder)
-
         optimizer = tf.keras.optimizers.Adam(learning_rate, beta_1=0.9, beta_2=0.98, epsilon=1e-6)
 
         l1 = L1(batch_size=batch_size, b_p_gpu=b_p_gpu, pred_len=max_pred_per_seq)
@@ -501,6 +499,9 @@ def build_model():
             return label_accuracy
 
         model.compile(loss={"output_1": l1, "output_2": l2}, optimizer=optimizer, metrics={"output_1": mm, "output_2": spm})
+
+        if os.listdir(checkpoint_folder):
+            model.load_weights(checkpoint_folder + "cp.ckpt")
 
     return
 
@@ -570,7 +571,12 @@ def train_model():
     if not train:
         return
 
-    cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_folder, verbose=1, period=5)
+    cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_folder + "cp.ckpt",
+                                                     monitor="loss",
+                                                     verbose=1,
+                                                     period=5,
+                                                     save_best_only=True,
+                                                     save_weights_only=True)
 
     # log_dir = "logs/fit/"
     # tb_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1, profile_batch=10000000)

@@ -372,30 +372,6 @@ def encode_and_quantize():
     return
 
 
-def create_padding_mask(seq):
-    seq = tf.cast(tf.math.equal(seq, 0), tf.float32)
-
-    # add extra dimensions to add the padding
-    # to the attention logits.
-    return seq[:, tf.newaxis, tf.newaxis, :]  # (batch_size, 1, 1, seq_len)
-
-
-def create_look_ahead_mask(size):
-    mask = 1 - tf.linalg.band_part(tf.ones((size, size)), -1, 0)
-    return mask  # (seq_len, seq_len)
-
-
-def create_mask(input_mask):
-    # Encoder padding mask
-    dim_0 = input_mask.shape[0]
-    dim_1 = input_mask.shape[1]
-    broadcast = tf.ones((dim_0, dim_1, 1), dtype=np.float32)
-    mask = tf.reshape(input_mask, shape=(dim_0, 1, dim_1))
-    # enc_padding_mask = create_padding_mask(inp)
-    enc_padding_mask = broadcast * mask
-    return enc_padding_mask
-
-
 def load_configuration():
     global checkpoint_folder, vocab_folder, max_len, batch_size, buffer_size, \
         mask_prob, max_pred_per_seq, num_layers, d_model, num_heads, dff, rate, \
@@ -474,7 +450,7 @@ def build_model():
         optimizer = tf.keras.optimizers.Adam(learning_rate, beta_1=0.9, beta_2=0.98, epsilon=1e-6)
 
         l1 = L1(batch_size=batch_size, b_p_gpu=b_p_gpu, pred_len=max_pred_per_seq)
-        l2 = L2(batch_size=b_p_gpu, b_p_gpu=b_p_gpu)
+        l2 = L2(batch_size=batch_size, b_p_gpu=b_p_gpu)
 
         @tf.function
         def mm(y_true, y_pred):
@@ -588,7 +564,8 @@ def train_model():
                   y=[y_masks_and_weights, y_sps],
                   batch_size=batch_size,
                   epochs=epochs,
-                  callbacks=[cp_callback])
+                  callbacks=[cp_callback],
+                  shuffle=False)
 
 
 def run_bert():

@@ -8,6 +8,7 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
+from loss_functions import MaskLoss, SamePaperLoss
 from tokenizer import Tokenizer
 from transformer import Transformer
 
@@ -29,18 +30,13 @@ data_file = None
 
 train = None
 infer = None
-
-model = None
-optimizer = None
-ckpt_manager = None
+eager = None
 
 strategy = None
-
-token_loss_func = None
-ns_loss_func = None
-
-train_loss = None
-train_accuracy = None
+model = None
+optimizer = None
+mask_loss = None
+ckpt_manager = None
 
 
 def download_and_tokenize_data():
@@ -399,21 +395,7 @@ def create_mask(input_mask):
 
 
 def loss_function(y_mask, y_mask_w, y_hat_mask, label, ns_output):
-    global batch_size, max_pred_per_seq, token_loss_func, ns_loss_func
-
-    vocab_size = y_hat_mask.shape[2]
-    epsilon = 1e-5
-
-    y_mask_one_hot = tf.one_hot(y_mask, vocab_size)
-    token_loss_ps = token_loss_func(y_mask_one_hot, y_hat_mask)
-    token_loss_ps = tf.reduce_sum(y_mask_w * token_loss_ps)
-    token_loss_ps = token_loss_ps / (tf.reduce_sum(y_mask_w) + epsilon)
-
-    ns_one_hot = tf.one_hot(label, 2)
-    ns_loss_ps = ns_loss_func(ns_one_hot, ns_output)
-    ns_loss_ps = tf.nn.compute_average_loss(ns_loss_ps, global_batch_size=batch_size)
-
-    train_loss = token_loss_ps + ns_loss_ps
+    global batch_size, max_pred_per_seq
 
     tokens = tf.argmax(y_hat_mask, 2)
     same_paper = tf.argmax(ns_output, 1)
@@ -430,7 +412,7 @@ def loss_function(y_mask, y_mask_w, y_hat_mask, label, ns_output):
 
 def load_configuration():
     global checkpoint_folder, vocab_folder, max_len, batch_size, buffer_size, \
-        mask_prob, max_pred_per_seq, num_layers, d_model, num_heads, dff, rate, epochs, learning_rate, data_file, train, infer
+        mask_prob, max_pred_per_seq, num_layers, d_model, num_heads, dff, rate, epochs, learning_rate, data_file, train, infer, eager
 
     with open("configuration.json") as fp:
         configuration = json.load(fp)
@@ -469,10 +451,16 @@ def load_configuration():
     print("TRAIN = {0}".format(train))
     infer = configuration["infer"]
     print("INFERENCE = {0}".format(infer))
+    eager = configuration["eager"]
+    print("EAGER = {0}".format(eager))
+
+    if eager:
+        tf.config.experimental_run_functions_eagerly(True)
+        tf.executing_eagerly()
 
 
 def build_model():
-    global max_len, strategy, model, optimizer, ckpt_manager, token_loss_func, ns_loss_func, train_loss, train_accuracy
+    global max_len, strategy, model, optimizer, ckpt_manager, mask_loss
 
     strategy = tf.distribute.MirroredStrategy()
 
@@ -490,14 +478,35 @@ def build_model():
 
         optimizer = tf.keras.optimizers.Adam(learning_rate, beta_1=0.9, beta_2=0.98, epsilon=1e-6)
 
-        token_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='none')
-        ns_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='none')
-
-        train_loss = tf.keras.metrics.Mean(name='train_loss')
-        train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
+        mask_loss = MaskLoss(batch_size)
+        same_paper_loss = SamePaperLoss(batch_size)
 
         ckpt = tf.train.Checkpoint(model=model, optimizer=optimizer)
         ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_folder, max_to_keep=5)
+
+        @tf.function
+        def mm(y_true, y_pred):
+            y_mask, y_mask_w = tf.cast(y_true[:, 0, :], dtype=tf.int32), y_true[:, 1, :]
+            y_hat_mask = y_pred
+            tokens = tf.argmax(y_hat_mask, 2)
+            y_mask_w = tf.cast(y_mask_w, tf.int64)
+            y_mask = tf.cast(y_mask, tf.int64)
+            mask_accuracy = tf.abs(tokens * y_mask_w - y_mask)
+            mask_accuracy = 1 - tf.where(mask_accuracy > 0).shape[0] / tf.reduce_sum(y_mask_w)
+            return mask_accuracy
+
+        @tf.function
+        def spm(y_true, y_pred):
+            label = y_true
+            y_hat_ns = y_pred
+            same_paper = tf.reshape(tf.argmax(y_hat_ns, 1), shape=(batch_size, 1))
+            label = tf.cast(label, tf.int64)
+            label_accuracy = 1 - tf.reduce_sum(tf.abs(same_paper - label)) / batch_size
+            return label_accuracy
+
+        model.compile(loss={"output_1": mask_loss, "output_2": same_paper_loss},
+                      optimizer=optimizer,
+                      metrics={"output_1": mm, "output_2": spm})
 
     # if a checkpoint exists, restore the latest checkpoint.
     if ckpt_manager.latest_checkpoint:
@@ -510,13 +519,13 @@ def build_model():
 def load_data():
     global data_file, batch_size, buffer_size, max_len, max_pred_per_seq
 
-    tokenized_sequences = []
-    input_masks = []
-    segments_ids = []
-    masks_indices = []
-    masks_weights = []
-    tokenized_masks = []
-    labels = []
+    tokenized_sequences = np.ones((buffer_size, max_len), dtype=np.float32)
+    input_masks = np.ones((buffer_size, max_len), dtype=np.float32)
+    segments_ids = np.ones((buffer_size, max_len), dtype=np.int)
+    masks_indices = np.ones((buffer_size, max_pred_per_seq), dtype=np.int)
+    masks_weights = np.ones((buffer_size, max_pred_per_seq), dtype=np.float32)
+    tokenized_masks = np.ones((buffer_size, max_pred_per_seq), dtype=np.int)
+    labels = np.ones((buffer_size, 1), dtype=np.int)
 
     with open(data_file, 'r', encoding='utf-8') as stream:
         sequences = stream.readlines()
@@ -532,126 +541,49 @@ def load_data():
             print("ERROR at {} got {} != is {}".format(index, width, max_pred_per_seq))
             exit(1)
 
-    for index, sentence in enumerate(sequences):
-        if len(tokenized_sequences) >= buffer_size:
-            break
-
+    for index, sentence in enumerate(sequences[0:buffer_size]):
         tokenized_sequence, input_mask, segment_ids, mask_indices, tokenized_mask, mask_weights, label = sentence.split(";")
 
         tokenized_sequence = list(map(float, tokenized_sequence.split(" ")[:-1]))
         assert_sequence_length(len(tokenized_sequence), index)
-        tokenized_sequences.append(tokenized_sequence)
+        tokenized_sequences[index] = tokenized_sequence
 
         input_mask = list(map(float, input_mask.split(" ")[:-1]))
         assert_sequence_length(len(input_mask), index)
-        input_masks.append(input_mask)
+        input_masks[index] = input_mask
 
         segment_ids = list(map(int, segment_ids.split(" ")[:-1]))
         assert_sequence_length(len(segment_ids), index)
-        segments_ids.append(segment_ids)
+        segments_ids[index] = segment_ids
 
         mask_indices = list(map(int, mask_indices.split(" ")[:-1]))
         assert_mask_length(len(mask_indices), index)
-        masks_indices.append(mask_indices)
+        masks_indices[index] = mask_indices
 
         mask_weights = list(map(float, mask_weights.split(" ")[:-1]))
         assert_mask_length(len(mask_weights), index)
-        masks_weights.append(mask_weights)
+        masks_weights[index] = mask_weights
 
         tokenized_mask = list(map(int, tokenized_mask.split(" ")[:-1]))
         assert_mask_length(len(tokenized_mask), index)
-        tokenized_masks.append(tokenized_mask)
+        tokenized_masks[index] = tokenized_mask
 
         label = int(label)
-        labels.append(label)
+        labels[index] = label
 
-    tf_tokenized_sequences = tf.data.Dataset.from_tensor_slices(tokenized_sequences)
-    tf_tokenized_sequences = tf_tokenized_sequences.batch(batch_size)
-    tf_input_masks = tf.data.Dataset.from_tensor_slices(input_masks)
-    tf_input_masks = tf_input_masks.batch(batch_size)
-    tf_segments_ids = tf.data.Dataset.from_tensor_slices(segments_ids)
-    tf_segments_ids = tf_segments_ids.batch(batch_size)
-    tf_mask_indices = tf.data.Dataset.from_tensor_slices(masks_indices)
-    tf_mask_indices = tf_mask_indices.batch(batch_size)
-    tf_tokenized_masks = tf.data.Dataset.from_tensor_slices(tokenized_masks)
-    tf_tokenized_masks = tf_tokenized_masks.batch(batch_size)
-    tf_masks_weights = tf.data.Dataset.from_tensor_slices(masks_weights)
-    tf_masks_weights = tf_masks_weights.batch(batch_size)
-    tf_labels = tf.data.Dataset.from_tensor_slices(labels)
-    tf_labels = tf_labels.batch(batch_size)
-
-    tf_train_dataset = tf.data.Dataset.zip(
-            (tf_tokenized_sequences, tf_input_masks, tf_segments_ids, tf_mask_indices, tf_tokenized_masks, tf_masks_weights, tf_labels))
-
-    return tf_train_dataset
+    return tokenized_sequences, input_masks, segments_ids, masks_indices, tokenized_masks, masks_weights, labels
 
 
 def train_model():
-    global strategy, model, optimizer, train_loss, train_accuracy, ckpt_manager, data_file, train, max_len, batch_size, buffer_size, epochs
+    global strategy, model, optimizer, ckpt_manager, data_file, train, max_len, batch_size, buffer_size, epochs
 
     if not train:
         return
 
-    tf_train_dataset = load_data()
-
-    with strategy.scope():
-        @tf.function
-        def train_step(tokenized_sequence, input_mask, segment_ids, mask_indices, y_mask, y_mask_w, y_ns):
-
-            enc_padding_mask = create_mask(input_mask)
-
-            with tf.GradientTape() as tape:
-                y_hat_mask, y_hat_ns = model(tokenized_sequence, enc_padding_mask, input_mask, segment_ids, mask_indices)
-                loss, mask_accuracy, label_accuracy = loss_function(y_mask, y_mask_w, y_hat_mask, y_ns, y_hat_ns)
-
-            gradients = tape.gradient(loss, model.trainable_variables)
-            optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-
-            return loss, mask_accuracy, label_accuracy
-
-        @tf.function
-        def distributed_train_epoch(tokenized_sequence, input_mask, segment_ids, mask_indices, y_mask, y_mask_w, y_ns):
-            per_replica = strategy.experimental_run_v2(train_step, args=(
-                    tokenized_sequence,
-                    input_mask,
-                    segment_ids,
-                    mask_indices,
-                    y_mask,
-                    y_mask_w,
-                    y_ns))
-            # total = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica, axis=None)
-            return per_replica
-
-        for epoch in range(epochs):
-            start = time.time()
-
-            loss_acc = 0
-            mask_accuracy_acc = 0
-            label_accuracy_acc = 0
-            count = 0
-
-            for batch, (tokenized_sequence, input_mask, segment_ids, mask_indices, tokenized_mask, mask_weights, label) in enumerate(
-                    tf_train_dataset):
-                loss, mask_accuracy, label_accuracy = distributed_train_epoch(tokenized_sequence, input_mask, segment_ids, mask_indices,
-                                                                              tokenized_mask, mask_weights, label)
-                loss_acc += loss
-                mask_accuracy_acc += mask_accuracy
-                label_accuracy_acc += label_accuracy
-                count += 1
-
-            loss_acc /= count
-            mask_accuracy_acc /= count
-            label_accuracy_acc /= count
-
-            template = 'Epoch {} Loss {:.4f} Mask / Label Accuracy {:.4f} / {:.4f}'
-            console_output = template.format(epoch, loss_acc, mask_accuracy_acc, label_accuracy_acc)
-            print(console_output)
-
-            if (epoch + 1) % 5 == 0:
-                ckpt_save_path = ckpt_manager.save()
-                print('Saving checkpoint for epoch {} at {}'.format(epoch + 1, ckpt_save_path))
-
-            print('Time taken for 1 epoch: {} secs\n'.format(time.time() - start))
+    tokenized_sequences, input_masks, segments_ids, masks_indices, tokenized_masks, masks_weights, labels = load_data()
+    model.fit(
+            x=[tokenized_sequences, input_masks, segments_ids, masks_indices],
+            y=[np.stack((tokenized_masks, masks_weights), axis=1), labels], epochs=epochs, batch_size=batch_size)
 
 
 def inference():
@@ -775,13 +707,12 @@ def run_bert():
     # encode_and_quantize()
     build_model()
     train_model()
-    inference()
+    # inference()
     return
 
 
 if __name__ == "__main__":
-    tf.config.experimental_run_functions_eagerly(True)
-    tf.executing_eagerly()
+    load_configuration()
     a = time.time()
     # run_tokenizer()
     run_bert()

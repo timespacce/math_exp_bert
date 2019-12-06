@@ -1,4 +1,6 @@
+import datetime
 import json
+import os
 import re
 import time
 
@@ -469,6 +471,8 @@ def build_model():
                             target_vocab_size=vocab_size,
                             rate=rate)
 
+        model.load_weights(checkpoint_folder)
+
         optimizer = tf.keras.optimizers.Adam(learning_rate, beta_1=0.9, beta_2=0.98, epsilon=1e-6)
 
         l1 = L1(batch_size=batch_size, b_p_gpu=b_p_gpu, pred_len=max_pred_per_seq)
@@ -497,15 +501,6 @@ def build_model():
             return label_accuracy
 
         model.compile(loss={"output_1": l1, "output_2": l2}, optimizer=optimizer, metrics={"output_1": mm, "output_2": spm})
-
-        ckpt = tf.train.Checkpoint(model=model, optimizer=optimizer)
-
-        ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_folder, max_to_keep=5)
-
-    # if a checkpoint exists, restore the latest checkpoint.
-    if ckpt_manager.latest_checkpoint:
-        ckpt.restore(ckpt_manager.latest_checkpoint)
-        print('Latest checkpoint restored!!')
 
     return
 
@@ -570,15 +565,24 @@ def load_data():
 
 
 def train_model():
-    global strategy, model, ckpt_manager, data_file, train, max_len, batch_size, buffer_size, epochs
+    global strategy, model, checkpoint_folder, data_file, train, max_len, batch_size, buffer_size, epochs
 
     if not train:
         return
 
+    cp_callback = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_folder, verbose=1, period=5)
+
+    # log_dir = "logs/fit/"
+    # tb_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1, profile_batch=10000000)
+
     in_seqs, in_masks, in_segs, in_mask_inds, y_masks_and_weights, y_sps = load_data()
 
     with strategy.scope():
-        model.fit(x=[in_seqs, in_masks, in_segs, in_mask_inds], y=[y_masks_and_weights, y_sps], batch_size=batch_size, epochs=epochs)
+        model.fit(x=[in_seqs, in_masks, in_segs, in_mask_inds],
+                  y=[y_masks_and_weights, y_sps],
+                  batch_size=batch_size,
+                  epochs=epochs,
+                  callbacks=[cp_callback])
 
 
 def run_bert():

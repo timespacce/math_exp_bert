@@ -1,5 +1,5 @@
 {
-  "checkpoint_folder": "checkpoints/formulas",
+  "checkpoint_folder": "checkpoints/formulas/cp.ckpt",
   "vocab_folder"     : "vocabs/sub_vocab_bert.txt",
   "max_len"          : 148,
   "batch_size"       : 8,

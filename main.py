@@ -471,8 +471,8 @@ def build_model():
 
         optimizer = tf.keras.optimizers.Adam(learning_rate, beta_1=0.9, beta_2=0.98, epsilon=1e-6)
 
-        l1 = L1(batch_size=batch_size, pred_len=max_pred_per_seq)
-        l2 = L2(batch_size=batch_size)
+        l1 = L1(batch_size=batch_size, b_p_gpu=b_p_gpu, pred_len=max_pred_per_seq)
+        l2 = L2(batch_size=b_p_gpu, b_p_gpu=b_p_gpu)
 
         @tf.function
         def mm(y_true, y_pred):

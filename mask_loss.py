@@ -29,9 +29,10 @@ class MaskLoss(tf.keras.losses.Loss):
 
 
 class L1(tf.keras.losses.Loss):
-    def __init__(self, batch_size, pred_len):
+    def __init__(self, batch_size, b_p_gpu, pred_len):
         super().__init__(reduction='none')
         self.batch_size = batch_size
+        self.b_p_gpu = b_p_gpu
         self.pred_len = pred_len
         self.token_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='none')
 
@@ -52,16 +53,17 @@ class L1(tf.keras.losses.Loss):
 
 
 class L2(tf.keras.losses.Loss):
-    def __init__(self, batch_size):
+    def __init__(self, batch_size, b_p_gpu):
         super().__init__(reduction='none')
         self.batch_size = batch_size
+        self.b_p_gpu = b_p_gpu
         self.sp_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='none')
 
     def call(self, y_true, y_pred):
         sp = y_true
         y_hat_sp = y_pred
 
-        sp = tf.reshape(sp, shape=(self.batch_size,))
+        sp = tf.reshape(sp, shape=(self.b_p_gpu,))
         sp = tf.cast(sp, dtype=tf.int64)
         ns_one_hot = tf.one_hot(sp, 2)
         sp_loss_ps = self.sp_loss_func(ns_one_hot, y_hat_sp)

@@ -490,7 +490,7 @@ def build_model():
         def spm(y_true, y_pred):
             sp = y_true
             y_hat_sp = y_pred
-            sp = tf.reshape(sp, shape=(batch_size,))
+            sp = tf.reshape(sp, shape=(b_p_gpu,))
             same_paper = tf.argmax(y_hat_sp, 1)
             label = tf.cast(sp, tf.int64)
             label_accuracy = 1 - tf.reduce_sum(tf.abs(same_paper - label)) / batch_size

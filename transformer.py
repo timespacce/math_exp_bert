@@ -25,30 +25,6 @@ def positional_encoding(position, d_model):
     return tf.cast(pos_encoding, dtype=tf.float32)
 
 
-def create_padding_mask(seq):
-    seq = tf.cast(tf.math.equal(seq, 0), tf.float32)
-
-    # add extra dimensions to add the padding
-    # to the attention logits.
-    return seq[:, tf.newaxis, tf.newaxis, :]  # (batch_size, 1, 1, seq_len)
-
-
-def create_look_ahead_mask(size):
-    mask = 1 - tf.linalg.band_part(tf.ones((size, size)), -1, 0)
-    return mask  # (seq_len, seq_len)
-
-
-def create_mask(input_mask):
-    # Encoder padding mask
-    dim_0 = 8
-    dim_1 = input_mask.shape[1]
-    broadcast = tf.ones((dim_0, dim_1, 1), dtype=np.float32)
-    mask = tf.reshape(input_mask, shape=(dim_0, 1, dim_1))
-    # enc_padding_mask = create_padding_mask(inp)
-    enc_padding_mask = broadcast * mask
-    return enc_padding_mask
-
-
 class Transformer(tf.keras.Model):
 
     def __init__(self, num_layers, d_model, num_heads, dff, input_vocab_size, target_vocab_size, rate):
@@ -84,28 +60,27 @@ class Transformer(tf.keras.Model):
         """
 
         Args:
-            tokenized_sequence: (batch_size, sequence_len)
-            enc_padding_mask:   (batch_size, sequence_len)
-            input_mask:         (batch_size, sequence_len)
-            sequence_ids:       (batch_size, sequence_len)
+            in_seq:         (batch_size, sequence_len)
+            enc_pad_mas:    (batch_size, sequence_len)
+            in_seg:         (batch_size, sequence_len)
+            in_ind:         (batch_size, sequence_len)
 
         Returns:
 
         """
-        tokenized_sequence, input_mask, segment_ids, mask_indices = inputs
-        seq_len = tokenized_sequence.shape[1]
+        in_seq, enc_pad_mas, in_seg, in_ind = inputs
+        seq_len = in_seq.shape[1]
 
-        y_hat = self.seq_embedding(tokenized_sequence)  # (batch_size, sequence_len, embedding_len)
-        sequence_ids_embedded = tf.one_hot(segment_ids, 2)  # (batch_size, sequence_len, 2)
-        y_hat += self.token_embedding(segment_ids)  # (batch_size, sequence_len, embedding_len)
+        y_hat = self.seq_embedding(in_seq)  # (batch_size, sequence_len, embedding_len)
+        sequence_ids_embedded = tf.one_hot(in_seg, 2)  # (batch_size, sequence_len, 2)
+        y_hat += self.token_embedding(in_seg)  # (batch_size, sequence_len, embedding_len)
         y_hat += self.pos_encoding[:, :seq_len, :]  # (batch_size, sequence_len, embedding_len)
         y_hat = self.pre_bn(y_hat)  # (batch_size, sequence_len, embedding_len)
         y_hat = self.pre_do(y_hat)  # (batch_size, sequence_len, embedding_len)
 
-        enc_padding_mask = create_mask(input_mask)
-        y_hat = self.encoder(y_hat, enc_padding_mask)  # (batch_size, sequence_len, embedding_len)
+        y_hat = self.encoder(y_hat, enc_pad_mas)  # (batch_size, sequence_len, embedding_len)
 
-        y_hat_mask = tf.gather(y_hat, mask_indices, batch_dims=1)  # (batch_size, mask_len, embedding_len)
+        y_hat_mask = tf.gather(y_hat, in_ind, batch_dims=1)  # (batch_size, mask_len, embedding_len)
         y_hat_mask = self.wh(y_hat_mask)  # (batch_size, mask_len, embedding_len)
         y_hat_mask = self.post_bn(y_hat_mask)  # (batch_size, mask_len, embedding_len)
 

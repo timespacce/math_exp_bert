@@ -30,7 +30,7 @@ class SamePaperLoss(tf.keras.losses.Loss):
         self.ns_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='none')
 
     def call(self, y_true, y_pred):
-        label = y_true
+        label = tf.cast(y_true, tf.int32)
         y_hat_ns = y_pred
 
         ns_one_hot = tf.one_hot(label, 2)

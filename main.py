@@ -492,7 +492,7 @@ def build_model():
             y_mask_w = tf.cast(y_mask_w, tf.int64)
             y_mask = tf.cast(y_mask, tf.int64)
             mask_accuracy = tf.abs(tokens * y_mask_w - y_mask)
-            mask_accuracy = 1 - tf.where(mask_accuracy > 0).shape[0] / tf.reduce_sum(y_mask_w)
+            mask_accuracy = 1 - tf.reduce_sum(tf.cast(mask_accuracy > 0, dtype=tf.int64)) / tf.reduce_sum(y_mask_w)
             return mask_accuracy
 
         @tf.function
@@ -521,11 +521,11 @@ def load_data():
 
     tokenized_sequences = np.ones((buffer_size, max_len), dtype=np.float32)
     input_masks = np.ones((buffer_size, max_len), dtype=np.float32)
-    segments_ids = np.ones((buffer_size, max_len), dtype=np.int)
-    masks_indices = np.ones((buffer_size, max_pred_per_seq), dtype=np.int)
+    segments_ids = np.ones((buffer_size, max_len), dtype=np.int32)
+    masks_indices = np.ones((buffer_size, max_pred_per_seq), dtype=np.int32)
     masks_weights = np.ones((buffer_size, max_pred_per_seq), dtype=np.float32)
-    tokenized_masks = np.ones((buffer_size, max_pred_per_seq), dtype=np.int)
-    labels = np.ones((buffer_size, 1), dtype=np.int)
+    tokenized_masks = np.ones((buffer_size, max_pred_per_seq), dtype=np.int32)
+    labels = np.ones((buffer_size, 1), dtype=np.int32)
 
     with open(data_file, 'r', encoding='utf-8') as stream:
         sequences = stream.readlines()

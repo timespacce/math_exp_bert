@@ -15,5 +15,5 @@
   "data_file"        : "data/formulas/train.txt",
   "train"            : true,
   "infer"            : true,
-  "eager"            : true
+  "eager"            : false
 }

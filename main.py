@@ -402,7 +402,7 @@ def create_mask(input_mask):
 
 
 def loss_function(y_mask, y_mask_w, y_hat_mask, y_sp, y_hat_sp):
-    global batch_size, b_p_gpu, max_pred_per_seq, token_loss_func, sp_loss_func
+    global b_p_gpu, max_pred_per_seq, token_loss_func, sp_loss_func
 
     vocab_size = y_hat_mask.shape[2]
     epsilon = 1e-5
@@ -414,7 +414,7 @@ def loss_function(y_mask, y_mask_w, y_hat_mask, y_sp, y_hat_sp):
 
     sp_one_hot = tf.one_hot(y_sp, 2)
     sp_loss_ps = sp_loss_func(sp_one_hot, y_hat_sp)
-    sp_loss_ps = tf.nn.compute_average_loss(sp_loss_ps, global_batch_size=batch_size)
+    sp_loss_ps = tf.nn.compute_average_loss(sp_loss_ps, global_batch_size=b_p_gpu)
 
     train_loss = token_loss_ps + sp_loss_ps
 
@@ -426,7 +426,7 @@ def loss_function(y_mask, y_mask_w, y_hat_mask, y_sp, y_hat_sp):
     y_sp = tf.cast(y_sp, tf.int64)
     mask_accuracy = tf.abs(tokens * y_mask_w - y_mask)
     mask_accuracy = 1 - tf.reduce_sum(tf.cast(mask_accuracy > 0, dtype=tf.int64)) / tf.reduce_sum(y_mask_w)
-    sp_accuracy = 1 - tf.reduce_sum(tf.abs(same_paper - y_sp)) / batch_size
+    sp_accuracy = 1 - tf.reduce_sum(tf.abs(same_paper - y_sp)) / b_p_gpu
 
     return train_loss, mask_accuracy, sp_accuracy
 
@@ -630,9 +630,9 @@ def train_model():
                                                                                                  y_weight,
                                                                                                  y_sp))
             if strategy.num_replicas_in_sync > 1:
-                return tf.reduce_sum(loss.values, axis=-1), \
-                       tf.reduce_sum(mask_accuracy.values, axis=-1), \
-                       tf.reduce_sum(label_accuracy.values, axis=-1)
+                return tf.reduce_sum(loss.values, axis=-1) / gpu_count, \
+                       tf.reduce_sum(mask_accuracy.values, axis=-1) / gpu_count, \
+                       tf.reduce_sum(label_accuracy.values, axis=-1) / gpu_count
             else:
                 return loss, mask_accuracy, label_accuracy
 

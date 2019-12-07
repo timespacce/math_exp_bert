@@ -622,9 +622,17 @@ def train_model():
 
         @tf.function
         def distributed_train_epoch(in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp):
-            per_replica = strategy.experimental_run_v2(train_step, args=(in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp))
-            # total = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica, axis=None)
-            return per_replica
+            loss, mask_accuracy, label_accuracy = strategy.experimental_run_v2(train_step, args=(in_seq,
+                                                                                                 in_mask,
+                                                                                                 in_seg,
+                                                                                                 in_ind,
+                                                                                                 y_mask,
+                                                                                                 y_weight,
+                                                                                                 y_sp))
+            if strategy.num_replicas_in_sync > 1:
+                return loss.values, mask_accuracy.values, label_accuracy.values
+            else:
+                return loss, mask_accuracy, label_accuracy
 
         for epoch in range(epochs):
             start = time.time()

@@ -40,7 +40,7 @@ ckpt_manager = None
 strategy = None
 
 token_loss_func = None
-ns_loss_func = None
+sp_loss_func = None
 
 train_loss = None
 train_accuracy = None
@@ -401,8 +401,8 @@ def create_mask(input_mask):
     return enc_padding_mask
 
 
-def loss_function(y_mask, y_mask_w, y_hat_mask, label, ns_output):
-    global batch_size, max_pred_per_seq, token_loss_func, ns_loss_func
+def loss_function(y_mask, y_mask_w, y_hat_mask, y_sp, y_hat_sp):
+    global batch_size, b_p_gpu, max_pred_per_seq, token_loss_func, sp_loss_func
 
     vocab_size = y_hat_mask.shape[2]
     epsilon = 1e-5
@@ -412,23 +412,23 @@ def loss_function(y_mask, y_mask_w, y_hat_mask, label, ns_output):
     token_loss_ps = tf.reduce_sum(y_mask_w * token_loss_ps)
     token_loss_ps = token_loss_ps / (tf.reduce_sum(y_mask_w) + epsilon)
 
-    ns_one_hot = tf.one_hot(label, 2)
-    ns_loss_ps = ns_loss_func(ns_one_hot, ns_output)
-    ns_loss_ps = tf.nn.compute_average_loss(ns_loss_ps, global_batch_size=batch_size)
+    sp_one_hot = tf.one_hot(y_sp, 2)
+    sp_loss_ps = sp_loss_func(sp_one_hot, y_hat_sp)
+    sp_loss_ps = tf.nn.compute_average_loss(sp_loss_ps, global_batch_size=batch_size)
 
-    train_loss = token_loss_ps + ns_loss_ps
+    train_loss = token_loss_ps + sp_loss_ps
 
     tokens = tf.argmax(y_hat_mask, 2)
-    same_paper = tf.argmax(ns_output, 1)
+    same_paper = tf.argmax(y_hat_sp, 1)
 
     y_mask_w = tf.cast(y_mask_w, tf.int64)
     y_mask = tf.cast(y_mask, tf.int64)
-    label = tf.cast(label, tf.int64)
+    y_sp = tf.cast(y_sp, tf.int64)
     mask_accuracy = tf.abs(tokens * y_mask_w - y_mask)
-    mask_accuracy = 1 - tf.where(mask_accuracy > 0).shape[0] / tf.reduce_sum(y_mask_w)
-    label_accuracy = 1 - tf.reduce_sum(tf.abs(same_paper - label)) / batch_size
+    mask_accuracy = 1 - tf.reduce_sum(tf.cast(mask_accuracy > 0, dtype=tf.int64)) / tf.reduce_sum(y_mask_w)
+    sp_accuracy = 1 - tf.reduce_sum(tf.abs(same_paper - y_sp)) / batch_size
 
-    return train_loss, mask_accuracy, label_accuracy
+    return train_loss, mask_accuracy, sp_accuracy
 
 
 def load_configuration():
@@ -485,7 +485,7 @@ def load_configuration():
 
 
 def build_model():
-    global max_len, strategy, model, optimizer, ckpt_manager, token_loss_func, ns_loss_func, b_p_gpu
+    global max_len, strategy, model, optimizer, ckpt_manager, token_loss_func, sp_loss_func, b_p_gpu
 
     strategy = tf.distribute.MirroredStrategy()
 
@@ -505,7 +505,7 @@ def build_model():
         optimizer = tf.keras.optimizers.Adam(learning_rate, beta_1=0.9, beta_2=0.98, epsilon=1e-6)
 
         token_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='none')
-        ns_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='none')
+        sp_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='none')
 
         ckpt = tf.train.Checkpoint(model=model, optimizer=optimizer)
         ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_folder, max_to_keep=5)
@@ -606,14 +606,14 @@ def train_model():
     tf_train_dataset = load_data()
 
     with strategy.scope():
-        @tf.function
-        def train_step(tokenized_sequence, input_mask, segment_ids, mask_indices, y_mask, y_mask_w, y_ns):
+        tf_train_dataset = strategy.experimental_distribute_dataset(tf_train_dataset)
 
-            enc_padding_mask = create_mask(input_mask)
+        def train_step(in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp):
+            enc_padding_mask = create_mask(in_mask)
 
             with tf.GradientTape() as tape:
-                y_hat_mask, y_hat_ns = model(tokenized_sequence, enc_padding_mask, input_mask, segment_ids, mask_indices)
-                loss, mask_accuracy, label_accuracy = loss_function(y_mask, y_mask_w, y_hat_mask, y_ns, y_hat_ns)
+                y_hat_mask, y_hat_sp = model(in_seq, enc_padding_mask, in_seg, in_ind)
+                loss, mask_accuracy, label_accuracy = loss_function(y_mask, y_weight, y_hat_mask, y_sp, y_hat_sp)
 
             gradients = tape.gradient(loss, model.trainable_variables)
             optimizer.apply_gradients(zip(gradients, model.trainable_variables))
@@ -621,15 +621,8 @@ def train_model():
             return loss, mask_accuracy, label_accuracy
 
         @tf.function
-        def distributed_train_epoch(tokenized_sequence, input_mask, segment_ids, mask_indices, y_mask, y_mask_w, y_ns):
-            per_replica = strategy.experimental_run_v2(train_step, args=(
-                    tokenized_sequence,
-                    input_mask,
-                    segment_ids,
-                    mask_indices,
-                    y_mask,
-                    y_mask_w,
-                    y_ns))
+        def distributed_train_epoch(in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp):
+            per_replica = strategy.experimental_run_v2(train_step, args=(in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp))
             # total = strategy.reduce(tf.distribute.ReduceOp.SUM, per_replica, axis=None)
             return per_replica
 
@@ -641,10 +634,8 @@ def train_model():
             label_accuracy_acc = 0
             count = 0
 
-            for batch, (tokenized_sequence, input_mask, segment_ids, mask_indices, tokenized_mask, mask_weights, label) in enumerate(
-                    tf_train_dataset):
-                loss, mask_accuracy, label_accuracy = distributed_train_epoch(tokenized_sequence, input_mask, segment_ids, mask_indices,
-                                                                              tokenized_mask, mask_weights, label)
+            for batch, (in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp) in enumerate(tf_train_dataset):
+                loss, mask_accuracy, label_accuracy = distributed_train_epoch(in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp)
                 loss_acc += loss
                 mask_accuracy_acc += mask_accuracy
                 label_accuracy_acc += label_accuracy

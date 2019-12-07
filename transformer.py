@@ -57,14 +57,14 @@ class Transformer(tf.keras.Model):
         self.sm_ns = tf.keras.layers.Softmax(axis=-1)
         return
 
-    def call(self, tokenized_sequence, enc_padding_mask, input_mask, sequence_ids, mask_indices):
+    def call(self, tokenized_sequence, enc_padding_mask, sequence_ids, mask_indices):
         """
 
         Args:
             tokenized_sequence: (batch_size, sequence_len)
             enc_padding_mask:   (batch_size, sequence_len)
-            input_mask:         (batch_size, sequence_len)
-            sequence_ids:       (batch_size, sequence_len)
+            sequence_ids:         (batch_size, sequence_len)
+            mask_indices:       (batch_size, sequence_len)
 
         Returns:
 

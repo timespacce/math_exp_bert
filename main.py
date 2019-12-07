@@ -430,7 +430,7 @@ def load_configuration():
 
 
 def build_model():
-    global max_len, gpu_count, strategy, model, optimizer, ckpt_manager, batch_size, max_pred_per_seq
+    global max_len, gpu_count, strategy, model, optimizer, ckpt_manager, batch_size, b_p_gpu, max_pred_per_seq
 
     strategy = tf.distribute.MirroredStrategy()
 
@@ -471,7 +471,7 @@ def build_model():
             sp = tf.reshape(sp, shape=(b_p_gpu,))
             same_paper = tf.argmax(y_hat_sp, 1)
             label = tf.cast(sp, tf.int64)
-            label_accuracy = 1 - tf.reduce_sum(tf.abs(same_paper - label)) / batch_size
+            label_accuracy = 1 - tf.reduce_sum(tf.abs(same_paper - label)) / b_p_gpu
             return label_accuracy
 
         model.compile(loss={"output_1": l1, "output_2": l2}, optimizer=optimizer, metrics={"output_1": mm, "output_2": spm})

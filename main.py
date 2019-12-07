@@ -37,6 +37,10 @@ eager = None
 
 strategy = None
 model = None
+l1 = None
+l2 = None
+mm = None
+spm = None
 optimizer = None
 ckpt_manager = None
 
@@ -430,7 +434,7 @@ def load_configuration():
 
 
 def build_model():
-    global max_len, gpu_count, strategy, model, optimizer, ckpt_manager, batch_size, b_p_gpu, max_pred_per_seq
+    global max_len, gpu_count, strategy, model, optimizer, ckpt_manager, batch_size, b_p_gpu, max_pred_per_seq, l1, l2, mm, spm
 
     strategy = tf.distribute.MirroredStrategy()
 
@@ -568,6 +572,79 @@ def train_model():
                   shuffle=False)
 
 
+def inference():
+    global model, l1, l2, mm, spm, infer, max_len, max_pred_per_seq, buffer_size, b_p_gpu
+
+    if not infer:
+        return
+
+    in_seqs, in_masks, in_segs, in_mask_inds, y_masks_and_weights, y_sps = load_data()
+    dataset = zip(in_seqs, in_masks, in_segs, in_mask_inds, y_masks_and_weights, y_sps)
+    validation = []
+
+    b_p_gpu = 1
+
+    model.b_p_gpu = b_p_gpu
+    l1.b_p_gpu = b_p_gpu
+    l2.b_p_gpu = b_p_gpu
+
+    for batch, (in_seq, in_mask, in_seg, in_ind, y_mask_and_weight, y_sp) in enumerate(dataset):
+        in_seq = in_seq.reshape((1, max_len))
+        in_mask = in_mask.reshape((1, max_len))
+        in_seg = in_seg.reshape((1, max_len))
+        in_ind = in_ind.reshape((1, max_pred_per_seq))
+        y_mask_and_weight = y_mask_and_weight.reshape((1, 2 * max_pred_per_seq))
+        y_sp = y_sp.reshape((1, 1))
+        y_hat_mask, y_hat_sp = model((in_seq, in_mask, in_seg, in_ind))
+        mask_loss = l1(y_mask_and_weight, y_hat_mask)
+        label_loss = l2(y_sp, y_hat_sp)
+        mask_acc = mm(y_mask_and_weight, y_hat_mask)
+        label_acc = spm(y_sp, y_hat_sp)
+        tokens = tf.argmax(y_hat_mask, axis=2)
+        same_paper = tf.argmax(y_hat_sp, axis=1)
+        y_mask = tf.cast(y_mask_and_weight[:, :max_pred_per_seq], tf.int32)
+        mask_len = tf.reduce_sum(y_mask_and_weight[:, max_pred_per_seq:])
+        entry = (y_mask.numpy(),
+                 tokens.numpy(),
+                 mask_len.numpy(),
+                 y_sp,
+                 same_paper.numpy(),
+                 mask_acc.numpy(),
+                 label_acc.numpy())
+        validation.append(entry)
+
+    validation.sort(key=lambda x: x[5] + x[6], reverse=True)
+
+    validation_file = "data/formulas/validation.txt"
+
+    with open(validation_file, mode='w', encoding='utf-8') as stream:
+        for index, batch in enumerate(validation):
+            mask_accuracy = batch[5]
+            label_accuracy = batch[6]
+            stream.write(str(index))
+            stream.write(" - ")
+            stream.write(str(round(mask_accuracy, 5)))
+            stream.write(" - ")
+            stream.write(str(round(label_accuracy, 5)))
+            stream.write(" - ")
+            stream.write('\n')
+            mask_len = int(batch[2])
+            for (mask, mask_hat, sp, sp_hat) in zip(batch[0], batch[1], batch[3], batch[4]):
+                for token in mask[0:mask_len]:
+                    stream.write(str(token))
+                    stream.write(" ")
+                stream.write(";")
+                for token in mask_hat[0:mask_len]:
+                    stream.write(str(token))
+                    stream.write(" ")
+                stream.write(";")
+                stream.write(str(sp[0]))
+                stream.write(";")
+                stream.write(str(sp_hat))
+                stream.write('\n')
+        stream.close()
+
+
 def run_bert():
     # download_and_tokenize_data()
     # clean_and_filter_data()
@@ -575,6 +652,7 @@ def run_bert():
     # encode_and_quantize()
     build_model()
     train_model()
+    inference()
     return
 
 

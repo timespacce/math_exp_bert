@@ -10,7 +10,7 @@
   "num_heads"        : 4,
   "dff"              : 128,
   "rate"             : 0.1,
-  "epochs"           : 500,
+  "epochs"           : 100,
   "learning_rate"    : 2e-5,
   "data_file"        : "data/formulas/train.txt",
   "train"            : true,

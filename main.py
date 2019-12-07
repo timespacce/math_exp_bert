@@ -630,7 +630,9 @@ def train_model():
                                                                                                  y_weight,
                                                                                                  y_sp))
             if strategy.num_replicas_in_sync > 1:
-                return loss.values, mask_accuracy.values, label_accuracy.values
+                return tf.reduce_sum(loss.values, axis=-1), \
+                       tf.reduce_sum(mask_accuracy.values, axis=-1), \
+                       tf.reduce_sum(label_accuracy.values, axis=-1)
             else:
                 return loss, mask_accuracy, label_accuracy
 

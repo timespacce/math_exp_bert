@@ -729,22 +729,23 @@ def inference():
     tf_train_dataset = tf.data.Dataset.zip(
             (tf_tokenized_sequences, tf_input_masks, tf_segments_ids, tf_mask_indices, tf_tokenized_masks, tf_masks_weights, tf_labels))
 
-    for tokenized_sequence, input_mask, segment_ids, mask_indices, tokenized_mask, mask_weights, label in tf_train_dataset:
-        arr = tokenized_sequence.numpy()
-
     validation = []
 
-    for batch, (tokenized_sequence, input_mask, segment_ids, mask_indices, tokenized_mask, mask_weights, label) in enumerate(
+    for batch, (in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp) in enumerate(
             tf_train_dataset):
-        enc_padding_mask = create_mask(input_mask)
-        y_hat_mask, y_hat_ns = model(tokenized_sequence, enc_padding_mask, input_mask, segment_ids, mask_indices)
-        err, mask_accuracy, label_accuracy = loss_function(tokenized_mask, mask_weights, y_hat_mask, label, y_hat_ns)
+        enc_padding_mask = create_mask(in_mask)
+        y_hat_mask, y_hat_ns = model(in_seq, enc_padding_mask, in_seg, in_ind)
+        err, mask_accuracy, label_accuracy = loss_function(y_mask, y_weight, y_hat_mask, y_sp, y_hat_ns)
         tokens = tf.argmax(y_hat_mask, axis=2)
         same_paper = tf.argmax(y_hat_ns, axis=1)
-        mask_len = mask_weights.numpy().sum(axis=1)
-        entry = (
-                tokenized_mask.numpy(), tokens.numpy(), mask_len, label.numpy(), same_paper.numpy(), mask_accuracy.numpy(),
-                label_accuracy.numpy())
+        mask_len = y_weight.numpy().sum(axis=1)
+        entry = (y_mask.numpy(),
+                 tokens.numpy(),
+                 mask_len,
+                 y_sp.numpy(),
+                 same_paper.numpy(),
+                 mask_accuracy.numpy(),
+                 label_accuracy.numpy())
         validation.append(entry)
 
     validation.sort(key=lambda x: x[5] + x[6], reverse=True)

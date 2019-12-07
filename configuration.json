@@ -3,7 +3,7 @@
   "vocab_folder"     : "vocabs/sub_vocab_bert.txt",
   "max_len"          : 148,
   "batch_size"       : 8,
-  "buffer_size"      : 8,
+  "buffer_size"      : 320,
   "mask_prob"        : 0.15,
   "num_layers"       : 4,
   "d_model"          : 128,
@@ -14,5 +14,6 @@
   "learning_rate"    : 2e-5,
   "data_file"        : "data/formulas/train.txt",
   "train"            : true,
-  "infer"            : true
+  "infer"            : true,
+  "eager"            : true
 }

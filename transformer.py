@@ -27,9 +27,10 @@ def positional_encoding(position, d_model):
 
 class Transformer(tf.keras.Model):
 
-    def __init__(self, num_layers, d_model, num_heads, dff, input_vocab_size, target_vocab_size, rate):
+    def __init__(self, b_p_gpu, num_layers, d_model, num_heads, dff, input_vocab_size, target_vocab_size, rate):
         super(Transformer, self).__init__()
 
+        self.b_p_gpu = b_p_gpu
         self.num_layers = num_layers
         self.d_model = d_model
         self.num_heads = num_heads

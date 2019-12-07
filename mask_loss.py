@@ -67,6 +67,6 @@ class L2(tf.keras.losses.Loss):
         sp = tf.cast(sp, dtype=tf.int64)
         ns_one_hot = tf.one_hot(sp, 2)
         sp_loss_ps = self.sp_loss_func(ns_one_hot, y_hat_sp)
-        sp_loss_ps = tf.nn.compute_average_loss(sp_loss_ps, global_batch_size=self.b_p_gpu)
+        sp_loss_ps = tf.nn.compute_average_loss(sp_loss_ps, global_batch_size=self.batch_size)
 
         return sp_loss_ps

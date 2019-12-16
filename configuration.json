@@ -3,7 +3,7 @@
   "vocab_folder"     : "vocabs/sub_vocab_bert.txt",
   "max_len"          : 153,
   "batch_size"       : 8,
-  "buffer_size"      : 8,
+  "buffer_size"      : 160000,
   "mask_prob"        : 0.15,
   "num_layers"       : 4,
   "d_model"          : 128,

@@ -621,7 +621,7 @@ def train_model():
             return loss, mask_accuracy, label_accuracy
 
         @tf.function
-        def distributed_train_epoch(in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp):
+        def distributed_train_step(in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp):
             loss, mask_accuracy, label_accuracy = strategy.experimental_run_v2(train_step, args=(in_seq,
                                                                                                  in_mask,
                                                                                                  in_seg,
@@ -636,6 +636,8 @@ def train_model():
             else:
                 return loss, mask_accuracy, label_accuracy
 
+        template = 'Epoch : {} ({:.3f}) | Loss : {:.4f} | Mask / Label Accuracy : {:.4f} / {:.4f} | delta = {:.4f}'
+
         for epoch in range(epochs):
             start = time.time()
 
@@ -645,25 +647,23 @@ def train_model():
             count = 0
 
             for batch, (in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp) in enumerate(tf_train_dataset):
-                loss, mask_accuracy, label_accuracy = distributed_train_epoch(in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp)
+                loss, mask_accuracy, label_accuracy = distributed_train_step(in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp)
                 loss_acc += loss
                 mask_accuracy_acc += mask_accuracy
                 label_accuracy_acc += label_accuracy
                 count += 1
+                print("\r", end="")
+                print("STEP : {} ({:.3}%)".format(batch, (batch / buffer_size) * 1e2), end="", flush=True)
 
             loss_acc /= count
             mask_accuracy_acc /= count
             label_accuracy_acc /= count
 
-            template = 'Epoch {} Loss {:.4f} Mask / Label Accuracy {:.4f} / {:.4f}'
-            console_output = template.format(epoch, loss_acc, mask_accuracy_acc, label_accuracy_acc)
-            print(console_output)
+            print(template.format(epoch, (epoch / epochs) * 1e2, loss_acc, mask_accuracy_acc, label_accuracy_acc, time.time() - start))
 
             if (epoch + 1) % 5 == 0:
                 ckpt_save_path = ckpt_manager.save()
                 print('Saving checkpoint for epoch {} at {}'.format(epoch + 1, ckpt_save_path))
-
-            print('Time taken for 1 epoch: {} secs\n'.format(time.time() - start))
 
 
 def inference():

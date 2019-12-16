@@ -2,6 +2,8 @@ import json
 import os
 import re
 import time
+from multiprocessing import Value
+from multiprocessing.pool import ThreadPool
 
 import numpy as np
 
@@ -32,6 +34,7 @@ infer = None
 eager = None
 gpu_count = None
 b_p_gpu = None
+cpu_threads = None
 
 model = None
 optimizer = None
@@ -434,7 +437,7 @@ def loss_function(y_mask, y_mask_w, y_hat_mask, y_sp, y_hat_sp):
 def load_configuration():
     global checkpoint_folder, vocab_folder, max_len, batch_size, buffer_size, \
         mask_prob, max_pred_per_seq, num_layers, d_model, num_heads, dff, rate, \
-        epochs, learning_rate, data_file, train, infer, eager, gpu_count, b_p_gpu
+        epochs, learning_rate, data_file, train, infer, eager, gpu_count, b_p_gpu, cpu_threads
 
     with open("configuration.json") as fp:
         configuration = json.load(fp)
@@ -482,6 +485,8 @@ def load_configuration():
     print("GPU_COUNT = {0}".format(gpu_count))
     b_p_gpu = int(batch_size / gpu_count)
     print("BATCHES_PRO_GPU = {0}".format(b_p_gpu))
+    cpu_threads = configuration["cpu_threads"]
+    print("CPU_THREADS = {0}".format(cpu_threads))
 
 
 def build_model():
@@ -519,7 +524,7 @@ def build_model():
 
 
 def load_data():
-    global data_file, batch_size, buffer_size, max_len, max_pred_per_seq
+    global data_file, batch_size, buffer_size, max_len, max_pred_per_seq, cpu_threads
 
     tokenized_sequences = []
     input_masks = []
@@ -528,6 +533,8 @@ def load_data():
     masks_weights = []
     tokenized_masks = []
     labels = []
+
+    counter = Value('f', 0)
 
     with open(data_file, 'r', encoding='utf-8') as stream:
         sequences = stream.readlines()
@@ -543,11 +550,14 @@ def load_data():
             print("ERROR at {} got {} != is {}".format(index, width, max_pred_per_seq))
             exit(1)
 
-    for index, sentence in enumerate(sequences):
-        if len(tokenized_sequences) >= buffer_size:
-            break
+    def load_sample(sample):
+        index = -1
 
-        tokenized_sequence, input_mask, segment_ids, mask_indices, tokenized_mask, mask_weights, label = sentence.split(";")
+        with counter.get_lock():
+            counter.value += 1
+            index = counter.value
+
+        tokenized_sequence, input_mask, segment_ids, mask_indices, tokenized_mask, mask_weights, label = sample.split(";")
 
         tokenized_sequence = list(map(float, tokenized_sequence.split(" ")[:-1]))
         assert_sequence_length(len(tokenized_sequence), index)
@@ -576,6 +586,16 @@ def load_data():
         label = int(label)
         labels.append(label)
 
+        print("\r", end="")
+        print("DATA LOAD : {0:.3}%".format((index / buffer_size) * 1e2), end="", flush=True)
+
+    pool = ThreadPool(cpu_threads)
+    pool.map(load_sample, sequences[:buffer_size])
+    pool.close()
+    pool.join()
+
+    print("DATA has been LOADED")
+
     tf_tokenized_sequences = tf.data.Dataset.from_tensor_slices(tokenized_sequences)
     tf_tokenized_sequences = tf_tokenized_sequences.batch(batch_size)
     tf_input_masks = tf.data.Dataset.from_tensor_slices(input_masks)
@@ -590,6 +610,8 @@ def load_data():
     tf_masks_weights = tf_masks_weights.batch(batch_size)
     tf_labels = tf.data.Dataset.from_tensor_slices(labels)
     tf_labels = tf_labels.batch(batch_size)
+
+    print("DATA has been converted")
 
     tf_train_dataset = tf.data.Dataset.zip(
             (tf_tokenized_sequences, tf_input_masks, tf_segments_ids, tf_mask_indices, tf_tokenized_masks, tf_masks_weights, tf_labels))

@@ -1,7 +1,7 @@
 {
   "checkpoint_folder": "checkpoints/formulas",
   "vocab_folder"     : "vocabs/sub_vocab_bert.txt",
-  "max_len"          : 148,
+  "max_len"          : 153,
   "batch_size"       : 8,
   "buffer_size"      : 8,
   "mask_prob"        : 0.15,

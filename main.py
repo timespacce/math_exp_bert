@@ -653,7 +653,7 @@ def train_model():
                 label_accuracy_acc += label_accuracy
                 count += 1
                 print("\r", end="")
-                print("STEP : {} ({:.3}%)".format(batch, (batch / buffer_size) * 1e2), end="", flush=True)
+                print("STEP : {} ({:.3}%)".format(batch, ((batch * batch_size) / buffer_size) * 1e2), end="", flush=True)
 
             loss_acc /= count
             mask_accuracy_acc /= count

@@ -803,10 +803,6 @@ def inference():
 
 
 def run_bert():
-    # download_and_tokenize_data()
-    # clean_and_filter_data()
-    # load_and_prepare_data()
-    # encode_and_quantize()
     build_model()
     train_model()
     inference()
@@ -816,7 +812,6 @@ def run_bert():
 if __name__ == "__main__":
     load_configuration()
     a = time.time()
-    # run_tokenizer()
     run_bert()
     b = (time.time() - a) * 1e3
     print("BERT NETWORK in {0}".format(b))

@@ -16,9 +16,11 @@ class EncoderLayer(tf.keras.layers.Layer):
         self.mha = MultiHeadAttention(self.d_model, self.num_heads)
 
         self.ffn1 = tf.keras.layers.Dense(self.d_model)
+
         intermediate_size = 3072
-        self.leaky_relu = tf.keras.layers.LeakyReLU(alpha=1e-1)
         self.intermediate = tf.keras.layers.Dense(intermediate_size)
+        self.leaky_relu = tf.keras.layers.LeakyReLU(alpha=1e-1)
+
         self.ffn3 = tf.keras.layers.Dense(self.d_model)
 
         self.batch_norm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
@@ -28,15 +30,19 @@ class EncoderLayer(tf.keras.layers.Layer):
         self.dropout_2 = tf.keras.layers.Dropout(self.rate)
 
     def call(self, x, enc_padding_mask):
+        # MHA
         output, attention_weights = self.mha(x, x, x, enc_padding_mask)
 
+        # LINEAR PROJECTION
         ffn = self.ffn1(output)
         do = self.dropout_1(ffn)
         bn = self.batch_norm1(do + x)
 
+        # INTERMEDIATE PROJECTION
         ffn = self.intermediate(bn)
         relu = self.leaky_relu(ffn)
 
+        # DOWN PROJECTION
         ffn = self.ffn3(relu)
         do = self.dropout_2(ffn)
         bn = self.batch_norm2(do + bn)
@@ -55,8 +61,6 @@ class Encoder(tf.keras.layers.Layer):
         self.dff = dff
         self.rate = rate
 
-        self.bn = tf.keras.layers.LayerNormalization(epsilon=1e-6)
-        self.do = tf.keras.layers.Dropout(rate)
         self.encoder_layers = [EncoderLayer(d_model, num_heads, dff, rate) for i in range(num_layers)]
 
     def call(self, embedded_sequence, enc_padding_mask):
@@ -70,8 +74,8 @@ class Encoder(tf.keras.layers.Layer):
 
         """
 
-        y_hat = self.bn(embedded_sequence)  # (batch_size, sequence_len, embedding_len)
-        y_hat = self.do(y_hat)  # (batch_size, sequence_len, embedding_len)
+        y_hat = embedded_sequence
+
         for encoder_layer in self.encoder_layers:
             y_hat = encoder_layer(y_hat, enc_padding_mask)
 

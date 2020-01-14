@@ -48,8 +48,8 @@ class Transformer(tf.keras.Model):
 
         self.encoder = Encoder(self.num_layers, self.d_model, self.num_heads, self.dff, self.rate)
 
-        wh_leaky_relu = tf.keras.activations.selu
-        self.wh = tf.keras.layers.Dense(self.d_model, activation=wh_leaky_relu)
+        self.wh = tf.keras.layers.Dense(self.d_model)
+        self.wh_leaky_relu = tf.keras.layers.LeakyReLU(alpha=1e-1)
         self.post_bn = tf.keras.layers.LayerNormalization(epsilon=1e-6)
         self.sm_seq = tf.keras.layers.Softmax(axis=-1)
 
@@ -57,25 +57,25 @@ class Transformer(tf.keras.Model):
         self.sm_ns = tf.keras.layers.Softmax(axis=-1)
         return
 
-    def call(self, tokenized_sequence, enc_padding_mask, sequence_ids, mask_indices):
+    def call(self, in_seq, enc_padding_mask, in_seg, mask_indices):
         """
 
         Args:
-            tokenized_sequence: (batch_size, sequence_len)
+            in_seq:             (batch_size, sequence_len)
             enc_padding_mask:   (batch_size, sequence_len)
-            sequence_ids:         (batch_size, sequence_len)
+            in_seg:             (batch_size, sequence_len)
             mask_indices:       (batch_size, sequence_len)
 
         Returns:
 
         """
 
-        seq_len = tokenized_sequence.shape[1]
+        seq_len = in_seq.shape[1]
 
-        y_hat = self.seq_embedding(tokenized_sequence)  # (batch_size, sequence_len, embedding_len)
-        sequence_ids_embedded = tf.one_hot(sequence_ids, 2)  # (batch_size, sequence_len, 2)
-        y_hat += self.token_embedding(sequence_ids)  # (batch_size, sequence_len, embedding_len)
+        y_hat = self.seq_embedding(in_seq)  # (batch_size, sequence_len, embedding_len)
+        y_hat += self.token_embedding(in_seg)  # (batch_size, sequence_len, embedding_len)
         y_hat += self.pos_encoding[:, :seq_len, :]  # (batch_size, sequence_len, embedding_len)
+
         y_hat = self.pre_bn(y_hat)  # (batch_size, sequence_len, embedding_len)
         y_hat = self.pre_do(y_hat)  # (batch_size, sequence_len, embedding_len)
 
@@ -83,13 +83,18 @@ class Transformer(tf.keras.Model):
 
         y_hat_mask = tf.gather(y_hat, mask_indices, batch_dims=1)  # (batch_size, mask_len, embedding_len)
         y_hat_mask = self.wh(y_hat_mask)  # (batch_size, mask_len, embedding_len)
+        y_hat_mask = self.wh_leaky_relu(y_hat_mask)
         y_hat_mask = self.post_bn(y_hat_mask)  # (batch_size, mask_len, embedding_len)
 
         y_hat_mask = tf.matmul(y_hat_mask, self.seq_embedding.weights[0], transpose_b=True)  # (batch_size, mask_len, dictionary_len)
         y_hat_mask = self.sm_seq(y_hat_mask)  # (batch_size, mask_len, dictionary_len)
 
-        y_hat_ns = tf.squeeze(y_hat[:, 0:1, :], axis=1)  # (batch_size, 1, hidden_size)
+        y_hat_ns = y_hat[:, 0:1, :]
+        y_hat_ns = tf.squeeze(y_hat_ns, axis=1)  # (batch_size, 1, hidden_size)
         y_hat_ns = self.wns(y_hat_ns)  # (batch_size, 1, 2)
+
+        # @TODO CHECK!!
+
         y_hat_ns = self.sm_ns(y_hat_ns)  # (batch_size, 1, 2)
 
         return y_hat_mask, y_hat_ns

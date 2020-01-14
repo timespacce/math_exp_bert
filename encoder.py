@@ -17,8 +17,8 @@ class EncoderLayer(tf.keras.layers.Layer):
 
         self.ffn1 = tf.keras.layers.Dense(self.d_model)
         intermediate_size = 3072
-        leaky_relu = tf.keras.activations.selu
-        self.intermediate = tf.keras.layers.Dense(intermediate_size, activation=leaky_relu)
+        self.leaky_relu = tf.keras.layers.LeakyReLU(alpha=1e-1)
+        self.intermediate = tf.keras.layers.Dense(intermediate_size)
         self.ffn3 = tf.keras.layers.Dense(self.d_model)
 
         self.batch_norm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
@@ -35,8 +35,9 @@ class EncoderLayer(tf.keras.layers.Layer):
         bn = self.batch_norm1(do + x)
 
         ffn = self.intermediate(bn)
+        relu = self.leaky_relu(ffn)
 
-        ffn = self.ffn3(ffn)
+        ffn = self.ffn3(relu)
         do = self.dropout_2(ffn)
         bn = self.batch_norm2(do + bn)
 

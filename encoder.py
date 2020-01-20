@@ -5,23 +5,22 @@ from mha import MultiHeadAttention
 
 class EncoderLayer(tf.keras.layers.Layer):
 
-    def __init__(self, d_model, num_heads, dff, rate=0.1):
+    def __init__(self, hidden_size, intermediate_size, num_heads, rate=0.1):
         super(EncoderLayer, self).__init__()
 
-        self.d_model = d_model
+        self.hidden_size = hidden_size
+        self.intermediate_size = intermediate_size
         self.num_heads = num_heads
-        self.dff = dff
         self.rate = rate
 
-        self.mha = MultiHeadAttention(self.d_model, self.num_heads)
+        self.mha = MultiHeadAttention(self.hidden_size, self.num_heads)
 
-        self.ffn1 = tf.keras.layers.Dense(self.d_model)
+        self.ffn1 = tf.keras.layers.Dense(self.hidden_size)
 
-        intermediate_size = 3072
-        self.intermediate = tf.keras.layers.Dense(intermediate_size)
+        self.intermediate = tf.keras.layers.Dense(self.intermediate_size)
         self.leaky_relu = tf.keras.layers.LeakyReLU(alpha=1e-1)
 
-        self.ffn3 = tf.keras.layers.Dense(self.d_model)
+        self.ffn3 = tf.keras.layers.Dense(self.hidden_size)
 
         self.batch_norm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
         self.batch_norm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
@@ -52,16 +51,16 @@ class EncoderLayer(tf.keras.layers.Layer):
 
 class Encoder(tf.keras.layers.Layer):
 
-    def __init__(self, num_layers, d_model, num_heads, dff, rate=0.1):
+    def __init__(self, num_layers, hidden_size, intermediate_size, num_heads, rate=0.1):
         super(Encoder, self).__init__()
 
         self.num_layers = num_layers
-        self.d_model = d_model
+        self.hidden_size = hidden_size
+        self.intermediate_size = intermediate_size
         self.num_heads = num_heads
-        self.dff = dff
         self.rate = rate
 
-        self.encoder_layers = [EncoderLayer(d_model, num_heads, dff, rate) for i in range(num_layers)]
+        self.encoder_layers = [EncoderLayer(hidden_size, intermediate_size, num_heads, rate) for i in range(num_layers)]
 
     def call(self, embedded_sequence, enc_padding_mask):
         """

@@ -10,31 +10,11 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
+from configuration import Configuration
 from tokenizer import Tokenizer
 from transformer import Transformer
 
-checkpoint_folder = None
-vocab_folder = None
-max_len = None
-batch_size = None
-buffer_size = None
-mask_prob = None
-max_pred_per_seq = None
-num_layers = None
-d_model = None
-num_heads = None
-dff = None
-rate = None
-epochs = None
-learning_rate = None
-data_file = None
-
-train = None
-infer = None
-eager = None
-gpu_count = None
-b_p_gpu = None
-cpu_threads = None
+c = None
 
 model = None
 optimizer = None
@@ -44,9 +24,6 @@ strategy = None
 
 token_loss_func = None
 sp_loss_func = None
-
-train_loss = None
-train_accuracy = None
 
 
 def download_and_tokenize_data():
@@ -63,6 +40,8 @@ def download_and_tokenize_data():
 
 
 def clean_and_filter_data():
+    global c
+
     data_set = "imdb_reviews"
     data_folder = "data\\imdb"
 
@@ -103,7 +82,7 @@ def clean_and_filter_data():
     review_size = 50
     reviews = reviews[0:review_size]
 
-    tokenizer = Tokenizer(vocab_folder)
+    tokenizer = Tokenizer(c.vocab_folder)
     reviews = [" ".join(tokenizer.tokenize_seq(review)) for review in reviews]
 
     with open('data/imdb/reviews.txt', mode='wt', encoding='utf-8') as stream:
@@ -230,14 +209,14 @@ def load_and_prepare_data():
 
 
 def encode_and_quantize():
-    global max_len, mask_prob, max_pred_per_seq
+    global c
 
     pair_sentences_file = 'data/imdb/pair_sentences.txt'
     appended_sequences_file = 'data/imdb/appended_sequences.txt'
     masked_sequences_file = 'data/imdb/masked_sequences.txt'
     tokenized_sequences_file = 'data/imdb/tokenized_sequences.txt'
 
-    tokenizer = Tokenizer(vocab_folder)
+    tokenizer = Tokenizer(c.vocab_folder)
 
     INITIAL_SYM = "[CLS]"
     INITIAL_TOKEN = tokenizer.encode_word(INITIAL_SYM)
@@ -266,7 +245,7 @@ def encode_and_quantize():
         raw_sequence = [INITIAL_SYM] + sen_x_split + [SEP_SYM] + sen_y_split + [SEP_SYM]
         sequence_len_run = len(raw_sequence)
 
-        masked_len = min(int(mask_prob * sequence_len_run), max_pred_per_seq)
+        masked_len = min(int(c.mask_prob * sequence_len_run), c.max_mask_len)
         indices = [index for (index, word) in enumerate(raw_sequence) if word not in [INITIAL_SYM, SEP_SYM]]
         np.random.shuffle(indices)
         masked_indices = indices[0:masked_len]
@@ -290,19 +269,19 @@ def encode_and_quantize():
         tokenized_seq_x_len = seq_y_s + 1
         tokenized_seq_y_len = tokenized_seq_len - tokenized_seq_x_len
 
-        if tokenized_seq_len > max_len:
+        if tokenized_seq_len > c.max_len:
             continue
 
         if len(masked_sequence) != len(tokenized_sen):
             print("ERROR SEQ {0} != {1}".format(len(masked_sequence), len(tokenized_sen)))
             continue
 
-        seq_padding = max_len - tokenized_seq_len
+        seq_padding = c.max_len - tokenized_seq_len
         tokenized_sen += [0] * seq_padding
         input_mask = [1] * tokenized_seq_len + [0] * seq_padding
         segment_ids = [0] * tokenized_seq_x_len + [1] * tokenized_seq_y_len + [0] * seq_padding
 
-        mask_padding = max_pred_per_seq - masked_len
+        mask_padding = c.max_mask_len - masked_len
         tokenized_mask = [tokenizer.encode_word(word) for word in masked_words]
         mask_weights = [1.0] * masked_len
         if len(masked_indices) != len(tokenized_mask):
@@ -394,126 +373,78 @@ def create_look_ahead_mask(size):
 
 
 def create_mask(input_mask):
-    # Encoder padding mask
-    dim_0 = input_mask.shape[0]
-    dim_1 = input_mask.shape[1]
-    broadcast = tf.ones((dim_0, dim_1, 1), dtype=np.float32)
-    mask = tf.reshape(input_mask, shape=(dim_0, 1, dim_1))
-    # enc_padding_mask = create_padding_mask(inp)
-    enc_padding_mask = broadcast * mask
+    batch_size = input_mask.shape[0]
+    seq_len = input_mask.shape[1]
+    broadcast = tf.ones((batch_size, seq_len, 1), dtype=np.float32)
+    mask = tf.reshape(input_mask, shape=(batch_size, 1, seq_len))
+    enc_padding_mask = broadcast * mask  # (batch_size, seq_len, seq_len)
     return enc_padding_mask
 
 
 def loss_function(y_mask, y_mask_w, y_hat_mask, y_sp, y_hat_sp):
-    global b_p_gpu, max_pred_per_seq, token_loss_func, sp_loss_func
+    global c, token_loss_func, sp_loss_func
 
     vocab_size = y_hat_mask.shape[2]
     epsilon = 1e-5
 
-    y_mask_one_hot = tf.one_hot(y_mask, vocab_size)
-    token_loss_ps = token_loss_func(y_mask_one_hot, y_hat_mask)
+    # y_mask_one_hot = tf.one_hot(y_mask, vocab_size)
+    token_loss_ps = token_loss_func(y_mask, y_hat_mask)
     token_loss_ps = tf.reduce_sum(y_mask_w * token_loss_ps)
     token_loss_ps = token_loss_ps / (tf.reduce_sum(y_mask_w) + epsilon)
 
-    sp_one_hot = tf.one_hot(y_sp, 2)
-    sp_loss_ps = sp_loss_func(sp_one_hot, y_hat_sp)
-    sp_loss_ps = tf.nn.compute_average_loss(sp_loss_ps, global_batch_size=b_p_gpu)
+    # sp_one_hot = tf.one_hot(y_sp, 2)
+    sp_loss_ps = sp_loss_func(y_sp, y_hat_sp)
+    sp_loss_ps = tf.nn.compute_average_loss(sp_loss_ps, global_batch_size=c.b_p_gpu)
 
     train_loss = token_loss_ps + sp_loss_ps
 
     tokens = tf.argmax(y_hat_mask, 2)
+    tokens = tf.cast(tokens, tf.float32)
     same_paper = tf.argmax(y_hat_sp, 1)
+    same_paper = tf.cast(same_paper, tf.float32)
 
-    y_mask_w = tf.cast(y_mask_w, tf.int64)
-    y_mask = tf.cast(y_mask, tf.int64)
-    y_sp = tf.cast(y_sp, tf.int64)
     mask_accuracy = tf.abs(tokens * y_mask_w - y_mask)
-    mask_accuracy = 1 - tf.reduce_sum(tf.cast(mask_accuracy > 0, dtype=tf.int64)) / tf.reduce_sum(y_mask_w)
-    sp_accuracy = 1 - tf.reduce_sum(tf.abs(same_paper - y_sp)) / b_p_gpu
+    mask_accuracy = mask_accuracy / (mask_accuracy + 1e-15)
+    mask_accuracy = tf.reduce_sum(mask_accuracy, axis=1) / tf.reduce_sum(y_mask_w, axis=1)
+    mask_accuracy = 1 - tf.reduce_mean(mask_accuracy)
+    sp_accuracy = 1 - tf.reduce_mean(tf.abs(same_paper - y_sp))
 
     return train_loss, mask_accuracy, sp_accuracy
 
 
 def load_configuration():
-    global checkpoint_folder, vocab_folder, max_len, batch_size, buffer_size, \
-        mask_prob, max_pred_per_seq, num_layers, d_model, num_heads, dff, rate, \
-        epochs, learning_rate, data_file, train, infer, eager, gpu_count, b_p_gpu, cpu_threads
+    global c
 
-    with open("configuration.json") as fp:
-        configuration = json.load(fp)
-
-    checkpoint_folder = configuration["checkpoint_folder"]
-    print("CHECKPOINT_FOLDER = {0}".format(checkpoint_folder))
-    vocab_folder = configuration["vocab_folder"]
-    print("VOCAB_FOLDER = {0}".format(vocab_folder))
-    max_len = configuration["max_len"]
-    print("MAX_LEN = {0}".format(max_len))
-    batch_size = configuration["batch_size"]
-    print("BATCH_SIZE = {0}".format(batch_size))
-    buffer_size = configuration["buffer_size"]
-    print("BUFFER_SIZE = {0}".format(buffer_size))
-    mask_prob = configuration["mask_prob"]
-    print("MASK_PROB = {0}".format(mask_prob))
-    max_pred_per_seq = int(mask_prob * max_len)
-    print("MAX_PRED_PER_SEQ = {0}".format(max_pred_per_seq))
-    num_layers = configuration["num_layers"]
-    print("NUM_LAYERS = {0}".format(num_layers))
-    d_model = configuration["d_model"]
-    print("D_MODEL = {0}".format(d_model))
-    num_heads = configuration["num_heads"]
-    print("NUM_HEADS = {0}".format(num_heads))
-    dff = configuration["dff"]
-    print("DFF = {0}".format(dff))
-    rate = configuration["rate"]
-    print("RATE = {0}".format(rate))
-    epochs = configuration["epochs"]
-    print("EPOCHS = {0}".format(epochs))
-    learning_rate = configuration["learning_rate"]
-    print("LEARNING_RATE = {0}".format(learning_rate))
-    data_file = configuration["data_file"]
-    print("DATA_FILE = {0}".format(data_file))
-    train = configuration["train"]
-    print("TRAIN = {0}".format(train))
-    infer = configuration["infer"]
-    print("INFERENCE = {0}".format(infer))
-    eager = configuration["eager"]
-    print("EAGER = {0}".format(eager))
-    if eager:
-        tf.config.experimental_run_functions_eagerly(True)
-        tf.executing_eagerly()
-    gpu_count = len(tf.config.experimental.list_logical_devices('GPU'))
-    print("GPU_COUNT = {0}".format(gpu_count))
-    b_p_gpu = int(batch_size / gpu_count)
-    print("BATCHES_PRO_GPU = {0}".format(b_p_gpu))
-    cpu_threads = configuration["cpu_threads"]
-    print("CPU_THREADS = {0}".format(cpu_threads))
+    configuration_file = "configuration.json"
+    c = Configuration(configuration_file)
 
 
 def build_model():
-    global max_len, strategy, model, optimizer, ckpt_manager, token_loss_func, sp_loss_func, b_p_gpu
+    global c, strategy, model, optimizer, ckpt_manager, token_loss_func, sp_loss_func
 
     strategy = tf.distribute.MirroredStrategy()
 
-    tokenizer = Tokenizer(vocab_folder)
+    tokenizer = Tokenizer(c.vocab_folder)
     vocab_size = tokenizer.vocab_size
 
     with strategy.scope():
-        model = Transformer(b_p_gpu=b_p_gpu,
-                            num_layers=num_layers,
-                            d_model=d_model,
-                            num_heads=num_heads,
-                            dff=dff,
-                            input_vocab_size=vocab_size,
-                            target_vocab_size=vocab_size,
-                            rate=rate)
+        model = Transformer(max_seq_len=c.max_seq_len,
+                            b_p_gpu=c.b_p_gpu,
+                            num_layers=c.num_layers,
+                            hidden_size=c.hidden_size,
+                            intermediate_size=c.intermediate_size,
+                            num_heads=c.num_heads,
+                            input_vocab_size=c.vocab_size,
+                            target_vocab_size=2,
+                            rate=c.drop_rate)
 
-        optimizer = tf.keras.optimizers.Adam(learning_rate, beta_1=0.9, beta_2=0.98, epsilon=1e-6)
+        optimizer = tf.keras.optimizers.Adam(c.learning_rate, beta_1=0.9, beta_2=0.98, epsilon=1e-6)
 
-        token_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='none')
-        sp_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='none')
+        token_loss_func = tf.keras.losses.SparseCategoricalCrossentropy(reduction='none')
+        sp_loss_func = tf.keras.losses.SparseCategoricalCrossentropy(reduction='none')
 
         ckpt = tf.train.Checkpoint(model=model, optimizer=optimizer)
-        ckpt_manager = tf.train.CheckpointManager(ckpt, checkpoint_folder, max_to_keep=5)
+        ckpt_manager = tf.train.CheckpointManager(ckpt, c.checkpoint_folder, max_to_keep=5)
 
     # if a checkpoint exists, restore the latest checkpoint.
     if ckpt_manager.latest_checkpoint:
@@ -524,7 +455,7 @@ def build_model():
 
 
 def load_data():
-    global data_file, batch_size, buffer_size, max_len, max_pred_per_seq, cpu_threads
+    global c
 
     tokenized_sequences = []
     input_masks = []
@@ -536,18 +467,20 @@ def load_data():
 
     counter = Value('f', 0)
 
-    with open(data_file, 'r', encoding='utf-8') as stream:
+    with open(c.data_file, 'r', encoding='utf-8') as stream:
         sequences = stream.readlines()
         stream.close()
 
+    sequences = sequences[:c.buffer_size]
+
     def assert_sequence_length(width, index):
-        if width != max_len:
-            print("ERROR at {} got {} != is {}".format(index, width, max_len))
+        if width != c.max_seq_len:
+            print("ERROR at {} got {} != is {}".format(index, width, c.max_seq_len))
             exit(1)
 
     def assert_mask_length(width, index):
-        if width != max_pred_per_seq:
-            print("ERROR at {} got {} != is {}".format(index, width, max_pred_per_seq))
+        if width != c.max_mask_len:
+            print("ERROR at {} got {} != is {}".format(index, width, c.max_mask_len))
             exit(1)
 
     def load_sample(sample):
@@ -579,39 +512,39 @@ def load_data():
         assert_mask_length(len(mask_weights), index)
         masks_weights.append(mask_weights)
 
-        tokenized_mask = list(map(int, tokenized_mask.split(" ")[:-1]))
+        tokenized_mask = list(map(float, tokenized_mask.split(" ")[:-1]))
         assert_mask_length(len(tokenized_mask), index)
         tokenized_masks.append(tokenized_mask)
 
-        label = int(label)
+        label = float(label)
         labels.append(label)
 
-        print("\r", end="")
-        print("DATA LOAD : {0:.3}%".format((index / buffer_size) * 1e2), end="", flush=True)
+        printf("DATA LOADING : {0:.3}%", (index / c.buffer_size) * 1e2)
 
-    pool = ThreadPool(cpu_threads)
-    pool.map(load_sample, sequences[:buffer_size])
+    pool = ThreadPool(c.cpu_threads)
+    pool.map(load_sample, sequences)
     pool.close()
     pool.join()
 
+    print("")
     print("DATA has been LOADED")
 
     tf_tokenized_sequences = tf.data.Dataset.from_tensor_slices(tokenized_sequences)
-    tf_tokenized_sequences = tf_tokenized_sequences.batch(batch_size)
+    tf_tokenized_sequences = tf_tokenized_sequences.batch(c.batch_size)
     tf_input_masks = tf.data.Dataset.from_tensor_slices(input_masks)
-    tf_input_masks = tf_input_masks.batch(batch_size)
+    tf_input_masks = tf_input_masks.batch(c.batch_size)
     tf_segments_ids = tf.data.Dataset.from_tensor_slices(segments_ids)
-    tf_segments_ids = tf_segments_ids.batch(batch_size)
+    tf_segments_ids = tf_segments_ids.batch(c.batch_size)
     tf_mask_indices = tf.data.Dataset.from_tensor_slices(masks_indices)
-    tf_mask_indices = tf_mask_indices.batch(batch_size)
+    tf_mask_indices = tf_mask_indices.batch(c.batch_size)
     tf_tokenized_masks = tf.data.Dataset.from_tensor_slices(tokenized_masks)
-    tf_tokenized_masks = tf_tokenized_masks.batch(batch_size)
+    tf_tokenized_masks = tf_tokenized_masks.batch(c.batch_size)
     tf_masks_weights = tf.data.Dataset.from_tensor_slices(masks_weights)
-    tf_masks_weights = tf_masks_weights.batch(batch_size)
+    tf_masks_weights = tf_masks_weights.batch(c.batch_size)
     tf_labels = tf.data.Dataset.from_tensor_slices(labels)
-    tf_labels = tf_labels.batch(batch_size)
+    tf_labels = tf_labels.batch(c.batch_size)
 
-    print("DATA has been converted")
+    print("DATA has been CONVERTED")
 
     tf_train_dataset = tf.data.Dataset.zip(
             (tf_tokenized_sequences, tf_input_masks, tf_segments_ids, tf_mask_indices, tf_tokenized_masks, tf_masks_weights, tf_labels))
@@ -619,10 +552,15 @@ def load_data():
     return tf_train_dataset
 
 
-def train_model():
-    global strategy, model, optimizer, ckpt_manager, data_file, train, max_len, batch_size, buffer_size, epochs
+def printf(template, *args):
+    print("\r", end="")
+    print(template.format(*args), end="", flush=True)
 
-    if not train:
+
+def train_model():
+    global c, strategy, model, optimizer, ckpt_manager
+
+    if not c.train:
         return
 
     tf_train_dataset = load_data()
@@ -652,36 +590,31 @@ def train_model():
                                                                                                  y_weight,
                                                                                                  y_sp))
             if strategy.num_replicas_in_sync > 1:
-                return tf.reduce_sum(loss.values, axis=-1) / gpu_count, \
-                       tf.reduce_sum(mask_accuracy.values, axis=-1) / gpu_count, \
-                       tf.reduce_sum(label_accuracy.values, axis=-1) / gpu_count
+                return tf.reduce_sum(loss.values, axis=-1) / c.gpu_count, \
+                       tf.reduce_sum(mask_accuracy.values, axis=-1) / c.gpu_count, \
+                       tf.reduce_sum(label_accuracy.values, axis=-1) / c.gpu_count
             else:
                 return loss, mask_accuracy, label_accuracy
 
-        template = 'Epoch : {} ({:.3f}) | Loss : {:.4f} | Mask / Label Accuracy : {:.4f} / {:.4f} | delta = {:.4f}'
+        template = 'Epoch : {} ({:.3f}%) | Loss : {:.4f} | Mask / Label Accuracy : {:.4f} / {:.4f} | delta = {:.4f}'
 
-        for epoch in range(epochs):
+        steps = c.buffer_size / c.batch_size
+
+        for epoch in range(c.epochs):
             start = time.time()
 
-            loss_acc = 0
-            mask_accuracy_acc = 0
-            label_accuracy_acc = 0
-            count = 0
+            l1_acc, a1_acc, a2_acc = 0, 0, 0
 
             for batch, (in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp) in enumerate(tf_train_dataset):
-                loss, mask_accuracy, label_accuracy = distributed_train_step(in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp)
-                loss_acc += loss
-                mask_accuracy_acc += mask_accuracy
-                label_accuracy_acc += label_accuracy
-                count += 1
-                print("\r", end="")
-                print("STEP : {} ({:.3}%)".format(batch, ((batch * batch_size) / buffer_size) * 1e2), end="", flush=True)
+                l1, a1, a2 = distributed_train_step(in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp)
+                l1_acc, a1_acc, a2_acc = l1_acc + l1, a1_acc + a1, a2_acc + a2
+                printf("STEP : {} ({:.3}%)", batch, ((batch + 1) / steps) * 1e2)
 
-            loss_acc /= count
-            mask_accuracy_acc /= count
-            label_accuracy_acc /= count
-
-            print(template.format(epoch, (epoch / epochs) * 1e2, loss_acc, mask_accuracy_acc, label_accuracy_acc, time.time() - start))
+            l1_acc /= steps
+            a1_acc /= steps
+            a2_acc /= steps
+            print("\r", end="")
+            print(template.format(epoch, (epoch / c.epochs) * 1e2, l1_acc, a1_acc, a2_acc, time.time() - start))
 
             if (epoch + 1) % 5 == 0:
                 ckpt_save_path = ckpt_manager.save()
@@ -689,92 +622,36 @@ def train_model():
 
 
 def inference():
-    global model, optimizer, train_loss, train_accuracy, ckpt_manager, data_file, infer, buffer_size
+    global c, model, optimizer, ckpt_manager
 
-    if not infer:
+    if not c.infer:
         return
 
-    tokenized_sequences = []
-    input_masks = []
-    segments_ids = []
-    masks_indices = []
-    masks_weights = []
-    tokenized_masks = []
-    labels = []
-
-    with open(data_file, 'r', encoding='utf-8') as stream:
-        sequences = stream.readlines()
-        stream.close()
-
-    for sentence in sequences:
-        if len(tokenized_sequences) >= buffer_size:
-            break
-
-        tokenized_sequence, input_mask, segment_ids, mask_indices, tokenized_mask, mask_weights, label = sentence.split(";")
-
-        tokenized_sequence = list(map(float, tokenized_sequence.split(" ")[:-1]))
-        tokenized_sequences.append(tokenized_sequence)
-
-        input_mask = list(map(float, input_mask.split(" ")[:-1]))
-        input_masks.append(input_mask)
-
-        segment_ids = list(map(int, segment_ids.split(" ")[:-1]))
-        segments_ids.append(segment_ids)
-
-        mask_indices = list(map(int, mask_indices.split(" ")[:-1]))
-        masks_indices.append(mask_indices)
-
-        mask_weights = list(map(float, mask_weights.split(" ")[:-1]))
-        masks_weights.append(mask_weights)
-
-        tokenized_mask = list(map(int, tokenized_mask.split(" ")[:-1]))
-        tokenized_masks.append(tokenized_mask)
-
-        label = int(label)
-        labels.append(label)
-
-    tf_tokenized_sequences = tf.data.Dataset.from_tensor_slices(tokenized_sequences)
-    tf_tokenized_sequences = tf_tokenized_sequences.batch(batch_size)
-    tf_input_masks = tf.data.Dataset.from_tensor_slices(input_masks)
-    tf_input_masks = tf_input_masks.batch(batch_size)
-    tf_segments_ids = tf.data.Dataset.from_tensor_slices(segments_ids)
-    tf_segments_ids = tf_segments_ids.batch(batch_size)
-    tf_mask_indices = tf.data.Dataset.from_tensor_slices(masks_indices)
-    tf_mask_indices = tf_mask_indices.batch(batch_size)
-    tf_tokenized_masks = tf.data.Dataset.from_tensor_slices(tokenized_masks)
-    tf_tokenized_masks = tf_tokenized_masks.batch(batch_size)
-    tf_masks_weights = tf.data.Dataset.from_tensor_slices(masks_weights)
-    tf_masks_weights = tf_masks_weights.batch(batch_size)
-    tf_labels = tf.data.Dataset.from_tensor_slices(labels)
-    tf_labels = tf_labels.batch(batch_size)
-
-    tf_train_dataset = tf.data.Dataset.zip(
-            (tf_tokenized_sequences, tf_input_masks, tf_segments_ids, tf_mask_indices, tf_tokenized_masks, tf_masks_weights, tf_labels))
-
+    tf_train_dataset = load_data()
     validation = []
 
-    for batch, (in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp) in enumerate(
-            tf_train_dataset):
+    for batch, (in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp) in enumerate(tf_train_dataset):
         enc_padding_mask = create_mask(in_mask)
         y_hat_mask, y_hat_ns = model(in_seq, enc_padding_mask, in_seg, in_ind)
         err, mask_accuracy, label_accuracy = loss_function(y_mask, y_weight, y_hat_mask, y_sp, y_hat_ns)
+
         tokens = tf.argmax(y_hat_mask, axis=2)
         same_paper = tf.argmax(y_hat_ns, axis=1)
         mask_len = y_weight.numpy().sum(axis=1)
-        entry = (y_mask.numpy(),
-                 tokens.numpy(),
-                 mask_len,
-                 y_sp.numpy(),
-                 same_paper.numpy(),
-                 mask_accuracy.numpy(),
-                 label_accuracy.numpy())
+
+        y_mask = np.int32(y_mask.numpy())
+        tokens = np.int32(tokens.numpy())
+        y_sp = np.int32(y_sp.numpy())
+        same_paper = same_paper.numpy()
+        mask_accuracy = mask_accuracy.numpy()
+        label_accuracy = label_accuracy.numpy()
+
+        entry = (y_mask, tokens, mask_len, y_sp, same_paper, mask_accuracy, label_accuracy)
         validation.append(entry)
 
     validation.sort(key=lambda x: x[5] + x[6], reverse=True)
 
-    validation_file = "data/formulas/validation.txt"
-
-    with open(validation_file, mode='w', encoding='utf-8') as stream:
+    with open(c.validation_file, mode='w', encoding='utf-8') as stream:
         for index, batch in enumerate(validation):
             mask_accuracy = batch[5]
             label_accuracy = batch[6]

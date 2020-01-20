@@ -1,20 +1,30 @@
 {
-  "checkpoint_folder": "checkpoints/formulas",
-  "vocab_folder"     : "vocabs/sub_vocab_bert_file.txt",
-  "max_len"          : 195,
-  "batch_size"       : 8,
-  "buffer_size"      : 1920,
-  "mask_prob"        : 0.15,
-  "num_layers"       : 4,
-  "d_model"          : 128,
-  "num_heads"        : 4,
-  "dff"              : 128,
-  "rate"             : 0.1,
-  "epochs"           : 1000,
-  "learning_rate"    : 2e-5,
-  "data_file"        : "data/formulas/train.txt",
-  "train"            : true,
-  "infer"            : true,
-  "eager"            : false,
-  "cpu_threads"      : 8
+  "data"     : {
+    "checkpoint_folder": "checkpoints/formulas",
+    "vocab_folder"     : "vocabs/sub_vocab_bert_file.txt",
+    "data_file"        : "data/formulas/train.txt",
+    "validation_file"  : "data/formulas/validation.txt",
+    "cpu_threads"      : 8
+  },
+  "model"    : {
+    "vocab_size"       : 207,
+    "max_seq_len"      : 195,
+    "mask_prob"        : 0.15,
+    "num_layers"       : 4,
+    "hidden_size"      : 128,
+    "intermediate_size": 3072,
+    "num_heads"        : 4,
+    "drop_rate"        : 0.1
+  },
+  "training" : {
+    "batch_size"   : 16,
+    "buffer_size"  : 1920,
+    "epochs"       : 100,
+    "learning_rate": 2e-5
+  },
+  "execution": {
+    "train": true,
+    "infer": true,
+    "eager": false
+  }
 }

@@ -662,20 +662,20 @@ def inference():
             stream.write(str(round(label_accuracy, 5)))
             stream.write(" - ")
             stream.write('\n')
-            for (mask, mask_hat, mask_len, sm, sm_hat) in zip(batch[0], batch[1], batch[2], batch[3], batch[4]):
-                mask_len = int(mask_len)
-                for token in mask[0:mask_len]:
-                    stream.write(str(token))
-                    stream.write(" ")
-                stream.write(";")
-                for token in mask_hat[0:mask_len]:
-                    stream.write(str(token))
-                    stream.write(" ")
-                stream.write(";")
-                stream.write(str(sm))
-                stream.write(";")
-                stream.write(str(sm_hat))
-                stream.write('\n')
+            # for (mask, mask_hat, mask_len, sm, sm_hat) in zip(batch[0], batch[1], batch[2], batch[3], batch[4]):
+            #     mask_len = int(mask_len)
+            #     for token in mask[0:mask_len]:
+            #         stream.write(str(token))
+            #         stream.write(" ")
+            #     stream.write(";")
+            #     for token in mask_hat[0:mask_len]:
+            #         stream.write(str(token))
+            #         stream.write(" ")
+            #     stream.write(";")
+            #     stream.write(str(sm))
+            #     stream.write(";")
+            #     stream.write(str(sm_hat))
+            #     stream.write('\n')
         stream.close()
 
 

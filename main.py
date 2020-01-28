@@ -9,6 +9,7 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 
 from configuration import Configuration
+from mask_loss import MaskLoss
 from tokenizer import Tokenizer
 from transformer import Transformer
 
@@ -22,352 +23,12 @@ strategy = None
 
 token_loss_func = None
 sp_loss_func = None
+mask_loss = None
 
 
-def download_and_tokenize_data():
-    data_set = "imdb_reviews"
-    data_folder = "data\\imdb"
-    vocab_folder = "vocabs\\imdb_small"
-    vocab_size = 2 ** 13
-    examples, metadata = tfds.load(name=data_set, data_dir=data_folder, with_info=True, as_supervised=True)
-    train_examples, test_examples = examples['train'], examples['test']
-    tokenizer = tfds.features.text.SubwordTextEncoder.build_from_corpus((review.numpy() for (review, i) in train_examples),
-                                                                        target_vocab_size=vocab_size)
-    tokenizer.save_to_file(vocab_folder)
-    return
-
-
-def clean_and_filter_data():
-    global c
-
-    data_set = "imdb_reviews"
-    data_folder = "data\\imdb"
-
-    examples, metadata = tfds.load(name=data_set, data_dir=data_folder, with_info=True, as_supervised=True)
-    train_examples, test_examples = examples['train'], examples['test']
-
-    def format_review(review):
-        output = review.decode('utf-8')
-        output = re.sub(r'<br /><br />|\'', '', output)
-        output = re.sub('\\?+', ' ? ', output)
-        output = re.sub('\\.+', ' . ', output)
-        output = re.sub('!+', ' ! ', output)
-        output = re.sub(',+', ' , ', output)
-        output = re.sub(':+', ' : ', output)
-        output = re.sub('\\"+', ' " ', output)
-        output = re.sub(' +', ' ', output)
-        output = re.sub('/+', ' / ', output)
-        output = re.sub('-+', ' - ', output)
-        output = re.sub('\\(+', ' ( ', output)
-        output = re.sub('\\)+', ' ) ', output)
-        output = re.sub('\\*+', ' * ', output)
-        output = re.sub('\\[+', ' [ ', output)
-        output = re.sub('\\]+', ' ] ', output)
-        output = re.sub('#+', ' # ', output)
-        output = re.sub('\\$+', ' $ ', output)
-        output = re.sub('@+', ' @ ', output)
-        output = re.sub(' +', ' ', output)
-        return output
-
-    def filter(review):
-        # non_asci = len(re.findall('[^\x00-\x7F]+', review))
-        return True
-
-    data = [(sample.numpy(), index.numpy()) for (sample, index) in train_examples]
-    reviews = [format_review(review) for (review, index) in data]
-    reviews = [review for review in reviews if filter(review)]
-
-    review_size = 50
-    reviews = reviews[0:review_size]
-
-    tokenizer = Tokenizer(c.vocab_folder)
-    reviews = [" ".join(tokenizer.tokenize_seq(review)) for review in reviews]
-
-    with open('data/imdb/reviews.txt', mode='wt', encoding='utf-8') as stream:
-        stream.write('\n'.join(reviews))
-
-    def split_review(review):
-        output = re.findall('[a-z][\\w\\s,\\"\\-#]+[.|?|!]+', review)
-        return output
-
-    with open('data/imdb/reviews.txt', encoding='utf-8') as f:
-        content = f.readlines()
-    reviews = [x.strip() for x in content]
-
-    transposed_sentences = [split_review(review) for review in reviews]
-    transposed_sentences = [sentences for sentences in transposed_sentences if len(sentences) > 0]
-
-    review_meta = [(review_index, len(sentences)) for (review_index, sentences) in enumerate(transposed_sentences)]
-
-    with open('data/imdb/reviews_meta.txt', mode='w', encoding='utf-8') as stream:
-        for (review_index, len_sentences) in review_meta:
-            stream.write(str(review_index))
-            stream.write(';')
-            stream.write(str(len_sentences))
-            stream.write('\n')
-        stream.close()
-
-    sentences = [(review_index, sentence_index, sentence) for (review_index, sentences) in
-                 enumerate(transposed_sentences) for (sentence_index, sentence) in enumerate(sentences)]
-
-    with open('data/imdb/sentences.txt', mode='w', encoding='utf-8') as stream:
-        for (review_index, sentence_index, sentence) in sentences:
-            stream.write(str(review_index))
-            stream.write(';')
-            stream.write(str(sentence_index))
-            stream.write(';')
-            stream.write(sentence)
-            stream.write('\n')
-        stream.close()
-
-    sentences = []
-    with open('data/imdb/sentences.txt', 'r', encoding='utf-8') as stream:
-        for sentence in stream:
-            row = sentence.split(";")
-            row = int(row[0]), int(row[1]), row[2]
-            sentences.append(row)
-
-    reviews_meta = []
-    with open('data/imdb/reviews_meta.txt', 'r', encoding='utf-8') as stream:
-        for sentence in stream:
-            row = sentence.split(";")
-            row = int(row[0]), int(row[1])
-            reviews_meta.append(row)
-
-    return
-
-
-def load_and_prepare_data():
-    sentences_file = "data/imdb/sentences.txt"
-    pair_sentences_file = 'data/imdb/pair_sentences.txt'
-    repeat_coefficient = 1
-
-    reviews_meta = []
-    with open('data/imdb/reviews_meta.txt', 'r', encoding='utf-8') as stream:
-        for sentence in stream:
-            row = sentence.split(";")
-            row = int(row[0]), int(row[1])
-            reviews_meta.append(row)
-    reviews_len = len(reviews_meta)
-
-    sentences = []
-    with open(sentences_file, 'r', encoding='utf-8') as stream:
-        for sentence in stream:
-            row = sentence.split(";")
-            row = int(row[0]), int(row[1]), row[2]
-            sentences.append(row)
-
-    map_sentences = {}
-    for review_index, sentence_index, sentence in sentences:
-        map_sentences[(review_index, sentence_index)] = sentence
-
-    dataset = []
-    for r_x, s_x, sen_x in sentences:
-        r_meta_x = reviews_meta[r_x]
-        r_len_x = r_meta_x[1]
-        for y in range(repeat_coefficient):
-            combine = np.random.uniform(0.0, 1.0, 1)
-            delta = 0.5
-            r_y, = np.random.randint(0, reviews_len, 1, dtype=np.int32)
-            if combine > delta and s_x < r_len_x - 1:
-                sen_y = map_sentences[(r_x, s_x + 1)]
-                sen_x = sen_x.strip()
-                sen_y = sen_y.strip()
-                sample = (sen_x, sen_y, 1)
-            else:
-                r_meta_y = reviews_meta[r_y]
-                r_len_y = r_meta_y[1]
-                s_y, = np.random.randint(0, r_len_y, 1)
-                sen_y = map_sentences[(r_y, s_y)]
-                sen_x = sen_x.strip()
-                sen_y = sen_y.strip()
-                sample = (sen_x, sen_y, 0)
-            dataset.append(sample)
-
-    with open(pair_sentences_file, mode='w', encoding='utf-8') as stream:
-        for (sen_x, sen_y, label) in dataset:
-            stream.write(sen_x)
-            stream.write(';')
-            stream.write(sen_y)
-            stream.write(';')
-            stream.write(str(label))
-            stream.write('\n')
-        stream.close()
-
-    print("PAIRS = {0}".format(len(dataset)))
-
-    pair_sentences = []
-    with open(pair_sentences_file, 'r', encoding='utf-8') as stream:
-        for sentence in stream:
-            row = sentence.split(";")
-            row = row[0], row[1], int(row[2])
-            pair_sentences.append(row)
-
-    return
-
-
-def encode_and_quantize():
-    global c
-
-    pair_sentences_file = 'data/imdb/pair_sentences.txt'
-    appended_sequences_file = 'data/imdb/appended_sequences.txt'
-    masked_sequences_file = 'data/imdb/masked_sequences.txt'
-    tokenized_sequences_file = 'data/imdb/tokenized_sequences.txt'
-
-    tokenizer = Tokenizer(c.vocab_folder)
-
-    INITIAL_SYM = "[CLS]"
-    INITIAL_TOKEN = tokenizer.encode_word(INITIAL_SYM)
-    SEP_SYM = "[SEP]"
-    SEP_TOKEN = tokenizer.encode_word(SEP_SYM)
-    MASK_SYM = "[MASK]"
-    MASK_TOKEN = tokenizer.encode_word(MASK_SYM)
-
-    pair_sentences = []
-    with open(pair_sentences_file, 'r', encoding='utf-8') as stream:
-        for sentence in stream:
-            row = sentence.split(";")
-            row = row[0], row[1], int(row[2])
-            pair_sentences.append(row)
-
-    raw_sequence_dataset = []
-    masked_dataset = []
-    tokenized_dataset = []
-    count = 0
-    for sen_x, sen_y, label in pair_sentences:
-        raw_sequence = INITIAL_SYM + " " + sen_x + " " + SEP_SYM + " " + sen_y + " " + SEP_SYM
-        raw_sequence_dataset.append(raw_sequence)
-
-        sen_x_split = sen_x.split(" ")
-        sen_y_split = sen_y.split(" ")
-        raw_sequence = [INITIAL_SYM] + sen_x_split + [SEP_SYM] + sen_y_split + [SEP_SYM]
-        sequence_len_run = len(raw_sequence)
-
-        masked_len = min(int(c.mask_prob * sequence_len_run), c.max_mask_len)
-        indices = [index for (index, word) in enumerate(raw_sequence) if word not in [INITIAL_SYM, SEP_SYM]]
-        np.random.shuffle(indices)
-        masked_indices = indices[0:masked_len]
-        masked_indices.sort()
-        masked_sequence = raw_sequence.copy()
-        masked_words = []
-        for masked_index in masked_indices:
-            masking, = np.random.uniform(0.0, 1.0, 1)
-            if masking >= 0.8:
-                masked_words.append(masked_sequence[masked_index])
-                masked_sequence[masked_index] = MASK_SYM
-            else:
-                masked_words.append(masked_sequence[masked_index])
-                masked_sequence[masked_index] = MASK_SYM
-        raw_train_sample = (masked_sequence, masked_words, masked_indices)
-        masked_dataset.append(raw_train_sample)
-
-        tokenized_sen = [tokenizer.encode_word(word) for word in masked_sequence]
-        tokenized_seq_len = len(tokenized_sen)
-        seq_y_s = tokenized_sen.index(SEP_TOKEN)
-        tokenized_seq_x_len = seq_y_s + 1
-        tokenized_seq_y_len = tokenized_seq_len - tokenized_seq_x_len
-
-        if tokenized_seq_len > c.max_len:
-            continue
-
-        if len(masked_sequence) != len(tokenized_sen):
-            print("ERROR SEQ {0} != {1}".format(len(masked_sequence), len(tokenized_sen)))
-            continue
-
-        seq_padding = c.max_len - tokenized_seq_len
-        tokenized_sen += [0] * seq_padding
-        input_mask = [1] * tokenized_seq_len + [0] * seq_padding
-        segment_ids = [0] * tokenized_seq_x_len + [1] * tokenized_seq_y_len + [0] * seq_padding
-
-        mask_padding = c.max_mask_len - masked_len
-        tokenized_mask = [tokenizer.encode_word(word) for word in masked_words]
-        mask_weights = [1.0] * masked_len
-        if len(masked_indices) != len(tokenized_mask):
-            print("ERROR MASK {0} != {1}".format(len(masked_indices), len(tokenized_mask)))
-            continue
-
-        tokenized_mask += [0] * mask_padding
-        masked_indices += [0] * mask_padding
-        mask_weights += [0.0] * mask_padding
-
-        tokenized_train_sample = (tokenized_sen, input_mask, segment_ids, masked_indices, tokenized_mask, mask_weights, label)
-        tokenized_dataset.append(tokenized_train_sample)
-        print("{0}".format(count))
-        count += 1
-
-    dataset_len = len(tokenized_dataset)
-    sequences_len = len(pair_sentences)
-    print("SEQUENCES / PAIRS = {0} / {1}".format(dataset_len, sequences_len))
-
-    with open(appended_sequences_file, mode='w', encoding='utf-8') as stream:
-        for index in range(dataset_len):
-            appended = raw_sequence_dataset[index]
-            stream.write(appended)
-            stream.write('\n')
-        stream.close()
-
-    with open(masked_sequences_file, mode='w', encoding='utf-8') as stream:
-        for index in range(dataset_len):
-            masked_sequence, masked_words, masked_indices = masked_dataset[index]
-            for word in masked_sequence:
-                stream.write(word)
-                stream.write(" ")
-            stream.write(";")
-            for word in masked_words:
-                stream.write(word)
-                stream.write(" ")
-            stream.write(";")
-            for masked_index in masked_indices:
-                stream.write(str(masked_index))
-                stream.write(" ")
-            stream.write('\n')
-        stream.close()
-
-    with open(tokenized_sequences_file, mode='w', encoding='utf-8') as stream:
-        for index in range(dataset_len):
-            tokenized_sen, input_mask, segment_ids, masked_indices, tokenized_mask, mask_weights, label = tokenized_dataset[index]
-            for token in tokenized_sen:
-                stream.write(str(token))
-                stream.write(" ")
-            stream.write(";")
-            for token in input_mask:
-                stream.write(str(token))
-                stream.write(" ")
-            stream.write(";")
-            for token in segment_ids:
-                stream.write(str(token))
-                stream.write(" ")
-            stream.write(";")
-            for mask_index in masked_indices:
-                stream.write(str(mask_index))
-                stream.write(" ")
-            stream.write(";")
-            for token in tokenized_mask:
-                stream.write(str(token))
-                stream.write(" ")
-            stream.write(";")
-            for weight in mask_weights:
-                stream.write(str(weight))
-                stream.write(" ")
-            stream.write(";")
-            stream.write(str(label))
-            stream.write('\n')
-        stream.close()
-
-    return
-
-
-def create_padding_mask(seq):
-    seq = tf.cast(tf.math.equal(seq, 0), tf.float32)
-
-    # add extra dimensions to add the padding
-    # to the attention logits.
-    return seq[:, tf.newaxis, tf.newaxis, :]  # (batch_size, 1, 1, seq_len)
-
-
-def create_look_ahead_mask(size):
-    mask = 1 - tf.linalg.band_part(tf.ones((size, size)), -1, 0)
-    return mask  # (seq_len, seq_len)
+def printf(template, *args):
+    print("\r", end="")
+    print(template.format(*args), end="", flush=True)
 
 
 def create_mask(input_mask):
@@ -382,7 +43,6 @@ def create_mask(input_mask):
 def loss_function(y_mask, y_mask_w, y_hat_mask, y_sp, y_hat_sp):
     global c, token_loss_func, sp_loss_func
 
-    vocab_size = y_hat_mask.shape[2]
     epsilon = 1e-5
 
     # y_mask_one_hot = tf.one_hot(y_mask, vocab_size)
@@ -396,6 +56,10 @@ def loss_function(y_mask, y_mask_w, y_hat_mask, y_sp, y_hat_sp):
 
     train_loss = token_loss_ps + sp_loss_ps
 
+    return train_loss
+
+
+def accuracy_function(y_mask, y_mask_w, y_hat_mask, y_sp, y_hat_sp):
     tokens = tf.argmax(y_hat_mask, 2)
     tokens = tf.cast(tokens, tf.float32)
     same_paper = tf.argmax(y_hat_sp, 1)
@@ -407,7 +71,7 @@ def loss_function(y_mask, y_mask_w, y_hat_mask, y_sp, y_hat_sp):
     mask_accuracy = 1 - tf.reduce_mean(mask_accuracy)
     sp_accuracy = 1 - tf.reduce_mean(tf.abs(same_paper - y_sp))
 
-    return train_loss, mask_accuracy, sp_accuracy
+    return mask_accuracy, sp_accuracy
 
 
 def load_configuration():
@@ -418,7 +82,7 @@ def load_configuration():
 
 
 def build_model():
-    global c, strategy, model, optimizer, ckpt_manager, token_loss_func, sp_loss_func
+    global c, strategy, model, mask_loss, optimizer, ckpt_manager, token_loss_func, sp_loss_func
 
     strategy = tf.distribute.MirroredStrategy()
 
@@ -436,10 +100,10 @@ def build_model():
                             target_vocab_size=2,
                             rate=c.drop_rate)
 
-        optimizer = tf.keras.optimizers.Adam(c.learning_rate, beta_1=0.9, beta_2=0.98, epsilon=1e-6)
-
         token_loss_func = tf.keras.losses.SparseCategoricalCrossentropy(reduction='none')
         sp_loss_func = tf.keras.losses.SparseCategoricalCrossentropy(reduction='none')
+
+        optimizer = tf.keras.optimizers.Adam(c.learning_rate, beta_1=0.9, beta_2=0.98, epsilon=1e-6)
 
         ckpt = tf.train.Checkpoint(model=model, optimizer=optimizer)
         ckpt_manager = tf.train.CheckpointManager(ckpt, c.checkpoint_folder, max_to_keep=5)
@@ -452,7 +116,7 @@ def build_model():
     return
 
 
-def load_data():
+def load_data(data_file, buffer_size):
     global c
 
     tokenized_sequences = []
@@ -465,11 +129,11 @@ def load_data():
 
     counter = Value('f', 0)
 
-    with open(c.data_file, 'r', encoding='utf-8') as stream:
+    with open(data_file, 'r', encoding='utf-8') as stream:
         sequences = stream.readlines()
         stream.close()
 
-    sequences = sequences[:c.buffer_size]
+    sequences = sequences[:buffer_size]
 
     def assert_sequence_length(width, index):
         if width != c.max_seq_len:
@@ -517,7 +181,7 @@ def load_data():
         label = float(label)
         labels.append(label)
 
-        printf("DATA LOADING : {0:.3}%", (index / c.buffer_size) * 1e2)
+        printf("DATA LOADING : {0:.3}%", (index / buffer_size) * 1e2)
 
     pool = ThreadPool(c.cpu_threads)
     pool.map(load_sample, sequences)
@@ -525,7 +189,7 @@ def load_data():
     pool.join()
 
     print("")
-    print("DATA has been LOADED")
+    print("{} has been LOADED".format(data_file))
 
     tf_tokenized_sequences = tf.data.Dataset.from_tensor_slices(tokenized_sequences)
     tf_tokenized_sequences = tf_tokenized_sequences.batch(c.batch_size)
@@ -542,7 +206,7 @@ def load_data():
     tf_labels = tf.data.Dataset.from_tensor_slices(labels)
     tf_labels = tf_labels.batch(c.batch_size)
 
-    print("DATA has been CONVERTED")
+    print("{} has been into TF dataset CONVERTED".format(data_file))
 
     tf_train_dataset = tf.data.Dataset.zip(
             (tf_tokenized_sequences, tf_input_masks, tf_segments_ids, tf_mask_indices, tf_tokenized_masks, tf_masks_weights, tf_labels))
@@ -550,31 +214,39 @@ def load_data():
     return tf_train_dataset
 
 
-def printf(template, *args):
-    print("\r", end="")
-    print(template.format(*args), end="", flush=True)
-
-
 def train_model():
-    global c, strategy, model, optimizer, ckpt_manager
+    global c, strategy, model, mask_loss, optimizer, ckpt_manager
 
     if not c.train:
         return
 
-    tf_train_dataset = load_data()
+    tf_train_dataset = load_data(c.train_data_file, c.train_buffer_size)
+    tf_test_dataset = load_data(c.test_data_file, c.test_buffer_size)
 
     with strategy.scope():
         tf_train_dataset = strategy.experimental_distribute_dataset(tf_train_dataset)
+        tf_test_dataset = strategy.experimental_distribute_dataset(tf_test_dataset)
 
         def train_step(in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp):
             enc_padding_mask = create_mask(in_mask)
 
             with tf.GradientTape() as tape:
                 y_hat_mask, y_hat_sp = model(in_seq, enc_padding_mask, in_seg, in_ind)
-                loss, mask_accuracy, label_accuracy = loss_function(y_mask, y_weight, y_hat_mask, y_sp, y_hat_sp)
+                loss = loss_function(y_mask, y_weight, y_hat_mask, y_sp, y_hat_sp)
+                mask_accuracy, label_accuracy = accuracy_function(y_mask, y_weight, y_hat_mask, y_sp, y_hat_sp)
 
             gradients = tape.gradient(loss, model.trainable_variables)
             optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+
+            return loss, mask_accuracy, label_accuracy
+
+        def test_step(in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp):
+            enc_padding_mask = create_mask(in_mask)
+
+            with tf.GradientTape() as tape:
+                y_hat_mask, y_hat_sp = model(in_seq, enc_padding_mask, in_seg, in_ind)
+                loss = loss_function(y_mask, y_weight, y_hat_mask, y_sp, y_hat_sp)
+                mask_accuracy, label_accuracy = accuracy_function(y_mask, y_weight, y_hat_mask, y_sp, y_hat_sp)
 
             return loss, mask_accuracy, label_accuracy
 
@@ -594,29 +266,56 @@ def train_model():
             else:
                 return loss, mask_accuracy, label_accuracy
 
-        template = 'Epoch : {} ({:.3f}%) | Loss : {:.4f} | Mask / Label Accuracy : {:.4f} / {:.4f} | delta = {:.4f}'
+        @tf.function
+        def distributed_test_step(in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp):
+            loss, mask_accuracy, label_accuracy = strategy.experimental_run_v2(test_step, args=(in_seq,
+                                                                                                in_mask,
+                                                                                                in_seg,
+                                                                                                in_ind,
+                                                                                                y_mask,
+                                                                                                y_weight,
+                                                                                                y_sp))
+            if strategy.num_replicas_in_sync > 1:
+                return tf.reduce_sum(loss.values, axis=-1) / c.gpu_count, \
+                       tf.reduce_sum(mask_accuracy.values, axis=-1) / c.gpu_count, \
+                       tf.reduce_sum(label_accuracy.values, axis=-1) / c.gpu_count
+            else:
+                return loss, mask_accuracy, label_accuracy
 
-        steps = c.buffer_size / c.batch_size
+        template = 'E: {} ({:.2f}%) | Loss: [{:.4f}, {:.4f}] | Mask / Label Acc: [{:.4f}, {:.4f}, {:.4f}, {:.4f}] | delta = {:.2f}'
 
-        for epoch in range(c.epochs):
+        tr_steps = c.train_buffer_size / c.batch_size
+        va_steps = c.test_buffer_size / c.batch_size + 1e-9
+
+        for e in range(c.epochs):
             start = time.time()
 
-            l1_acc, a1_acc, a2_acc = 0, 0, 0
+            tr_l1_acc, tr_a1_acc, tr_a2_acc = 0, 0, 0
 
             for batch, (in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp) in enumerate(tf_train_dataset):
-                l1, a1, a2 = distributed_train_step(in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp)
-                l1_acc, a1_acc, a2_acc = l1_acc + l1, a1_acc + a1, a2_acc + a2
-                printf("STEP : {} ({:.3}%)", batch, ((batch + 1) / steps) * 1e2)
+                tr_l1, tr_a1, tr_a2 = distributed_train_step(in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp)
+                tr_l1_acc, tr_a1_acc, tr_a2_acc = tr_l1_acc + tr_l1, tr_a1_acc + tr_a1, tr_a2_acc + tr_a2
+                printf("TRAIN_STEP : {} ({:.3}%)", batch, ((batch + 1) / tr_steps) * 1e2)
 
-            l1_acc /= steps
-            a1_acc /= steps
-            a2_acc /= steps
+            tr_l1_acc, tr_a1_acc, tr_a2_acc = tr_l1_acc / tr_steps, tr_a1_acc / tr_steps, tr_a2_acc / tr_steps
+
+            va_l1_acc, va_a1_acc, va_a2_acc = 0, 0, 0
+
+            for batch, (in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp) in enumerate(tf_test_dataset):
+                va_l1, va_a1, va_a2 = distributed_test_step(in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp)
+                va_l1_acc, va_a1_acc, va_a2_acc = va_l1_acc + va_l1, va_a1_acc + va_a1, va_a2_acc + va_a2
+                printf("TEST_STEP : {} ({:.3}%)", batch, ((batch + 1) / va_steps) * 1e2)
+
+            va_l1_acc, va_a1_acc, va_a2_acc = va_l1_acc / va_steps, va_a1_acc / va_steps, va_a2_acc / va_steps
+
+            percent = (e / c.epochs) * 1e2
+            delta = time.time() - start
             print("\r", end="")
-            print(template.format(epoch, (epoch / c.epochs) * 1e2, l1_acc, a1_acc, a2_acc, time.time() - start))
+            print(template.format(e, percent, tr_l1_acc, va_l1_acc, tr_a1_acc, tr_a2_acc, va_a1_acc, va_a2_acc, delta))
 
-            if (epoch + 1) % 5 == 0:
+            if (e + 1) % 5 == 0:
                 ckpt_save_path = ckpt_manager.save()
-                print('Saving checkpoint for epoch {} at {}'.format(epoch + 1, ckpt_save_path))
+                print('Saving checkpoint for epoch {} at {}'.format(e + 1, ckpt_save_path))
 
 
 def inference():
@@ -625,13 +324,14 @@ def inference():
     if not c.infer:
         return
 
-    tf_train_dataset = load_data()
+    tf_train_dataset = load_data(c.train_data_file, c.train_buffer_size)
     validation = []
 
     for batch, (in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp) in enumerate(tf_train_dataset):
         enc_padding_mask = create_mask(in_mask)
         y_hat_mask, y_hat_ns = model(in_seq, enc_padding_mask, in_seg, in_ind)
-        err, mask_accuracy, label_accuracy = loss_function(y_mask, y_weight, y_hat_mask, y_sp, y_hat_ns)
+        err = loss_function(y_mask, y_weight, y_hat_mask, y_sp, y_hat_ns)
+        mask_accuracy, label_accuracy = accuracy_function(y_mask, y_weight, y_hat_mask, y_sp, y_hat_ns)
 
         tokens = tf.argmax(y_hat_mask, axis=2)
         same_paper = tf.argmax(y_hat_ns, axis=1)

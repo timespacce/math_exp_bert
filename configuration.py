@@ -6,7 +6,8 @@ class Configuration(object):
     # data
     checkpoint_folder = None
     vocab_folder = None
-    data_file = None
+    train_data_file = None
+    test_data_file = None
     cpu_threads = None
 
     # model
@@ -20,7 +21,8 @@ class Configuration(object):
 
     # training
     batch_size = None
-    buffer_size = None
+    train_buffer_size = None
+    test_buffer_size = None
     epochs = None
     learning_rate = None
 
@@ -42,8 +44,10 @@ class Configuration(object):
         print("CHECKPOINT_FOLDER = {}".format(self.checkpoint_folder))
         self.vocab_folder = self.configuration["data"]["vocab_folder"]
         print("VOCAB_FOLDER = {}".format(self.vocab_folder))
-        self.data_file = self.configuration["data"]["data_file"]
-        print("DATA_FILE = {}".format(self.data_file))
+        self.train_data_file = self.configuration["data"]["train_data_file"]
+        print("TRAIN_DATA_FILE = {}".format(self.train_data_file))
+        self.test_data_file = self.configuration["data"]["test_data_file"]
+        print("TEST_DATA_FILE = {}".format(self.test_data_file))
         self.validation_file = self.configuration["data"]["validation_file"]
         print("VALIDATION_FILE = {}".format(self.validation_file))
         self.cpu_threads = self.configuration["data"]["cpu_threads"]
@@ -72,8 +76,10 @@ class Configuration(object):
         # training
         self.batch_size = self.configuration["training"]["batch_size"]
         print("BATCH_SIZE = {}".format(self.batch_size))
-        self.buffer_size = self.configuration["training"]["buffer_size"]
-        print("BUFFER_SIZE = {}".format(self.buffer_size))
+        self.train_buffer_size = self.configuration["training"]["train_buffer_size"]
+        print("TRAIN_BUFFER_SIZE = {}".format(self.train_buffer_size))
+        self.test_buffer_size = self.configuration["training"]["test_buffer_size"]
+        print("TEST_BUFFER_SIZE = {}".format(self.test_buffer_size))
         self.epochs = self.configuration["training"]["epochs"]
         print("EPOCHS = {}".format(self.epochs))
         self.learning_rate = self.configuration["training"]["learning_rate"]

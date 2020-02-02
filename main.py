@@ -316,20 +316,24 @@ def train_model():
                 print('Saving checkpoint for epoch {} at {}'.format(e + 1, ckpt_save_path))
 
 
-def inference():
+def inference(data_file, validation_file, buffer_size):
     global c, model, optimizer, ckpt_manager
 
     if not c.infer:
         return
 
-    tf_train_dataset = load_data(c.train_data_file, c.train_buffer_size)
+    dataset = load_data(data_file, buffer_size)
     validation = []
 
-    for batch, (in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp) in enumerate(tf_train_dataset):
+    steps = buffer_size / c.batch_size
+    l1_acc, a1_acc, a2_acc = 0, 0, 0
+
+    for batch, (in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp) in enumerate(dataset):
         enc_padding_mask = create_mask(in_mask)
         y_hat_mask, y_hat_ns = model(in_seq, enc_padding_mask, in_seg, in_ind)
-        err = loss_function(y_mask, y_weight, y_hat_mask, y_sp, y_hat_ns)
-        mask_accuracy, label_accuracy = accuracy_function(y_mask, y_weight, y_hat_mask, y_sp, y_hat_ns)
+        l1 = loss_function(y_mask, y_weight, y_hat_mask, y_sp, y_hat_ns)
+        a1, a2 = accuracy_function(y_mask, y_weight, y_hat_mask, y_sp, y_hat_ns)
+        l1_acc, a1_acc, a2_acc = l1_acc + l1, a1_acc + a1, a2_acc + a2
 
         tokens = tf.argmax(y_hat_mask, axis=2)
         same_paper = tf.argmax(y_hat_ns, axis=1)
@@ -339,15 +343,25 @@ def inference():
         tokens = np.int32(tokens.numpy())
         y_sp = np.int32(y_sp.numpy())
         same_paper = same_paper.numpy()
-        mask_accuracy = mask_accuracy.numpy()
-        label_accuracy = label_accuracy.numpy()
+        mask_accuracy = a1.numpy()
+        label_accuracy = a2.numpy()
 
         entry = (y_mask, tokens, mask_len, y_sp, same_paper, mask_accuracy, label_accuracy)
         validation.append(entry)
 
+    l1_acc, a1_acc, a2_acc = l1_acc / steps, a1_acc / steps, a2_acc / steps
+    l1_acc, a1_acc, a2_acc = l1_acc.numpy(), a1_acc.numpy(), a2_acc.numpy()
+
     validation.sort(key=lambda x: x[5] + x[6], reverse=True)
 
-    with open(c.validation_file, mode='w', encoding='utf-8') as stream:
+    with open(validation_file, mode='w', encoding='utf-8') as stream:
+        stream.write("L1: ")
+        stream.write(str(round(l1_acc, 5)))
+        stream.write(" - A1: ")
+        stream.write(str(round(a1_acc, 5)))
+        stream.write(" - A2: ")
+        stream.write(str(round(a2_acc, 5)))
+        stream.write('\n')
         for index, batch in enumerate(validation):
             mask_accuracy = batch[5]
             label_accuracy = batch[6]
@@ -376,9 +390,12 @@ def inference():
 
 
 def run_bert():
+    global c
+
     build_model()
     train_model()
-    inference()
+    inference(c.train_data_file, c.train_validation_file, c.train_buffer_size)
+    inference(c.test_data_file, c.test_validation_file, c.test_buffer_size)
     return
 
 

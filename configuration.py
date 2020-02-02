@@ -8,6 +8,8 @@ class Configuration(object):
     vocab_folder = None
     train_data_file = None
     test_data_file = None
+    train_validation_file = None
+    test_validation_file = None
     cpu_threads = None
 
     # model
@@ -48,8 +50,10 @@ class Configuration(object):
         print("TRAIN_DATA_FILE = {}".format(self.train_data_file))
         self.test_data_file = self.configuration["data"]["test_data_file"]
         print("TEST_DATA_FILE = {}".format(self.test_data_file))
-        self.validation_file = self.configuration["data"]["validation_file"]
-        print("VALIDATION_FILE = {}".format(self.validation_file))
+        self.train_validation_file = self.configuration["data"]["train_validation_file"]
+        print("TRAIN_VALIDATION_FILE = {}".format(self.train_validation_file))
+        self.test_validation_file = self.configuration["data"]["test_validation_file"]
+        print("TEST_VALIDATION_FILE = {}".format(self.test_validation_file))
         self.cpu_threads = self.configuration["data"]["cpu_threads"]
         print("CPU_THREADS = {}".format(self.cpu_threads))
 

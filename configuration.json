@@ -1,11 +1,12 @@
 {
   "data"     : {
-    "checkpoint_folder": "checkpoints/formulas",
-    "vocab_folder"     : "vocabs/sub_vocab_bert_file.txt",
-    "train_data_file"  : "data/formulas/train.txt",
-    "test_data_file"   : "data/formulas/test.txt",
-    "validation_file"  : "data/formulas/validation.txt",
-    "cpu_threads"      : 8
+    "checkpoint_folder"    : "checkpoints/formulas",
+    "vocab_folder"         : "vocabs/sub_vocab_bert_file.txt",
+    "train_data_file"      : "data/formulas/train.txt",
+    "test_data_file"       : "data/formulas/test.txt",
+    "train_validation_file": "data/formulas/train_validation.txt",
+    "test_validation_file" : "data/formulas/test_validation.txt",
+    "cpu_threads"          : 8
   },
   "model"    : {
     "vocab_size"       : 207,
@@ -20,7 +21,7 @@
   "training" : {
     "batch_size"       : 16,
     "train_buffer_size": 1920,
-    "test_buffer_size" : 0,
+    "test_buffer_size" : 320,
     "epochs"           : 200,
     "learning_rate"    : 2e-5
   },

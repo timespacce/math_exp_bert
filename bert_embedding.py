@@ -85,7 +85,7 @@ class BERT_Embedding(tf.keras.layers.Layer):
         seq_len = in_seq.shape[1]
 
         y_hat = tf.gather(self.word_embeddings, tf.cast(in_seq, tf.int32))
-        y_hat += self.positional_encoding[:, :seq_len]
+        y_hat += self.positional_encoding[:seq_len, :]
         in_seg_one_hot = tf.one_hot(in_seg, 2)
         y_hat += tf.matmul(in_seg_one_hot, self.type_embeddings)
         return y_hat

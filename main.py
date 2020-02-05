@@ -25,6 +25,9 @@ token_loss_func = None
 sp_loss_func = None
 mask_loss = None
 
+train_data = None
+test_data = None
+
 
 def printf(template, *args):
     print("\r", end="")
@@ -213,17 +216,17 @@ def load_data(data_file, buffer_size):
 
 
 def train_model():
-    global c, strategy, model, mask_loss, optimizer, ckpt_manager
+    global c, strategy, model, mask_loss, optimizer, ckpt_manager, train_data, test_data
 
     if not c.train:
         return
 
-    tf_train_dataset = load_data(c.train_data_file, c.train_buffer_size)
-    tf_test_dataset = load_data(c.test_data_file, c.test_buffer_size)
+    train_data = load_data(c.train_data_file, c.train_buffer_size)
+    test_data = load_data(c.test_data_file, c.test_buffer_size)
 
     with strategy.scope():
-        tf_train_dataset = strategy.experimental_distribute_dataset(tf_train_dataset)
-        tf_test_dataset = strategy.experimental_distribute_dataset(tf_test_dataset)
+        tf_train_dataset = strategy.experimental_distribute_dataset(train_data)
+        tf_test_dataset = strategy.experimental_distribute_dataset(test_data)
 
         def train_step(in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp):
             enc_padding_mask = create_mask(in_mask)
@@ -316,13 +319,14 @@ def train_model():
                 print('Saving checkpoint for epoch {} at {}'.format(e + 1, ckpt_save_path))
 
 
-def inference(data_file, validation_file, buffer_size):
+def inference(dataset, data_file, validation_file, buffer_size):
     global c, model, optimizer, ckpt_manager
 
     if not c.infer:
         return
 
-    dataset = load_data(data_file, buffer_size)
+    if dataset is None:
+        dataset = load_data(data_file, buffer_size)
     validation = []
 
     steps = buffer_size / c.batch_size
@@ -390,12 +394,12 @@ def inference(data_file, validation_file, buffer_size):
 
 
 def run_bert():
-    global c
+    global c, train_data, test_data
 
     build_model()
     train_model()
-    inference(c.train_data_file, c.train_validation_file, c.train_buffer_size)
-    inference(c.test_data_file, c.test_validation_file, c.test_buffer_size)
+    inference(train_data, c.train_data_file, c.train_validation_file, c.train_buffer_size)
+    inference(test_data, c.test_data_file, c.test_validation_file, c.test_buffer_size)
     return
 
 

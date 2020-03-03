@@ -25,9 +25,6 @@ token_loss_func = None
 sp_loss_func = None
 mask_loss = None
 
-train_data = None
-test_data = None
-
 
 def printf(template, *args):
     print("\r", end="")
@@ -131,6 +128,8 @@ def load_data(data_file, buffer_size):
 
     with open(data_file, 'r', encoding='utf-8') as stream:
         sequences = stream.readlines()
+        sequences_len = len(sequences)
+        print("{} with {} sequences".format(data_file, sequences_len))
         stream.close()
 
     sequences = sequences[:buffer_size]
@@ -215,14 +214,11 @@ def load_data(data_file, buffer_size):
     return train_data
 
 
-def train_model():
-    global c, strategy, model, mask_loss, optimizer, ckpt_manager, train_data, test_data
+def train_model(train_data, test_data):
+    global c, strategy, model, mask_loss, optimizer, ckpt_manager
 
-    if not c.train:
+    if not c.train or c.train_buffer_size is 0:
         return
-
-    train_data = load_data(c.train_data_file, c.train_buffer_size)
-    test_data = load_data(c.test_data_file, c.test_buffer_size)
 
     with strategy.scope():
         tf_train_dataset = strategy.experimental_distribute_dataset(train_data)
@@ -295,8 +291,12 @@ def train_model():
 
             for batch, (in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp) in enumerate(tf_train_dataset):
                 tr_l1, tr_a1, tr_a2 = distributed_train_step(in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp)
+
+                w = batch + 1
                 tr_l1_acc, tr_a1_acc, tr_a2_acc = tr_l1_acc + tr_l1, tr_a1_acc + tr_a1, tr_a2_acc + tr_a2
-                printf("TRAIN_STEP : {} ({:.3}%)", batch, ((batch + 1) / tr_steps) * 1e2)
+                tr_l1_mu, tr_a1_mu, tr_a2_mu = tr_l1_acc / w, tr_a1_acc / w, tr_a2_acc / w
+                percent = 1e2 * w / tr_steps
+                printf("TRAIN_STEP : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4}", batch, percent, tr_l1_mu, tr_a1_mu, tr_a2_mu)
 
             tr_l1_acc, tr_a1_acc, tr_a2_acc = tr_l1_acc / tr_steps, tr_a1_acc / tr_steps, tr_a2_acc / tr_steps
 
@@ -304,8 +304,12 @@ def train_model():
 
             for batch, (in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp) in enumerate(tf_test_dataset):
                 va_l1, va_a1, va_a2 = distributed_test_step(in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp)
+
+                w = batch + 1
                 va_l1_acc, va_a1_acc, va_a2_acc = va_l1_acc + va_l1, va_a1_acc + va_a1, va_a2_acc + va_a2
-                printf("TEST_STEP : {} ({:.3}%)", batch, ((batch + 1) / va_steps) * 1e2)
+                va_l1_mu, va_a1_mu, va_a2_mu = va_l1_acc / w, va_a1_acc / w, va_a2_acc / w
+                percent = 1e2 * w / va_steps
+                printf("TEST_STEP : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4}", batch, percent, va_l1_mu, va_a1_mu, va_a2_mu)
 
             va_l1_acc, va_a1_acc, va_a2_acc = va_l1_acc / va_steps, va_a1_acc / va_steps, va_a2_acc / va_steps
 
@@ -319,52 +323,61 @@ def train_model():
                 print('Saving checkpoint for epoch {} at {}'.format(e + 1, ckpt_save_path))
 
 
-def inference(dataset, data_file, validation_file, buffer_size):
+def inference(dataset, validation_file, buffer_size):
     global c, model, optimizer, ckpt_manager
 
-    if not c.infer:
+    if not c.infer or buffer_size is 0:
         return
 
-    if dataset is None:
-        dataset = load_data(data_file, buffer_size)
     validation = []
 
     steps = buffer_size / c.batch_size
     l1_acc, a1_acc, a2_acc = 0, 0, 0
 
-    for batch, (in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp) in enumerate(dataset):
-        enc_padding_mask = create_mask(in_mask)
-        y_hat_mask, y_hat_ns = model(in_seq, enc_padding_mask, in_seg, in_ind)
-        l1 = loss_function(y_mask, y_weight, y_hat_mask, y_sp, y_hat_ns)
-        a1, a2 = accuracy_function(y_mask, y_weight, y_hat_mask, y_sp, y_hat_ns)
-        l1_acc, a1_acc, a2_acc = l1_acc + l1, a1_acc + a1, a2_acc + a2
+    with strategy.scope():
+        tf_dataset = strategy.experimental_distribute_dataset(dataset)
 
-        tokens = tf.argmax(y_hat_mask, axis=2)
-        same_paper = tf.argmax(y_hat_ns, axis=1)
-        mask_len = y_weight.numpy().sum(axis=1)
+        for batch, (in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp) in enumerate(tf_dataset):
+            enc_padding_mask = create_mask(in_mask)
+            y_hat_mask, y_hat_ns = model(in_seq, enc_padding_mask, in_seg, in_ind)
+            l1 = loss_function(y_mask, y_weight, y_hat_mask, y_sp, y_hat_ns)
+            a1, a2 = accuracy_function(y_mask, y_weight, y_hat_mask, y_sp, y_hat_ns)
+            l1_acc, a1_acc, a2_acc = l1_acc + l1, a1_acc + a1, a2_acc + a2
 
-        y_mask = np.int32(y_mask.numpy())
-        tokens = np.int32(tokens.numpy())
-        y_sp = np.int32(y_sp.numpy())
-        same_paper = same_paper.numpy()
-        mask_accuracy = a1.numpy()
-        label_accuracy = a2.numpy()
+            tokens = tf.argmax(y_hat_mask, axis=2)
+            same_paper = tf.argmax(y_hat_ns, axis=1)
+            mask_len = y_weight.numpy().sum(axis=1)
 
-        entry = (y_mask, tokens, mask_len, y_sp, same_paper, mask_accuracy, label_accuracy)
-        validation.append(entry)
+            y_mask = np.int32(y_mask.numpy())
+            tokens = np.int32(tokens.numpy())
+            y_sp = np.int32(y_sp.numpy())
+            same_paper = same_paper.numpy()
+            mask_accuracy = a1.numpy()
+            label_accuracy = a2.numpy()
+
+            entry = (y_mask, tokens, mask_len, y_sp, same_paper, mask_accuracy, label_accuracy)
+            validation.append(entry)
+
+            w = batch + 1
+            l1_mu, a1_mu, a2_mu = l1_acc / w, a1_acc / w, a2_acc / w
+            percent = 1e2 * (batch + 1) / steps
+            printf("INFERENCE : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4}", batch, percent, l1_mu, a1_mu, a2_mu)
 
     l1_acc, a1_acc, a2_acc = l1_acc / steps, a1_acc / steps, a2_acc / steps
-    l1_acc, a1_acc, a2_acc = l1_acc.numpy(), a1_acc.numpy(), a2_acc.numpy()
+
+    template = "VALIDATION : Loss = {:.4} Mask / Label = {:.4} {:.4}"
+    print("\r", end="")
+    print(template.format(l1_acc, a1_acc, a2_acc))
 
     validation.sort(key=lambda x: x[5] + x[6], reverse=True)
 
     with open(validation_file, mode='w', encoding='utf-8') as stream:
         stream.write("L1: ")
-        stream.write(str(round(l1_acc, 5)))
+        stream.write(str(l1_acc.numpy()))
         stream.write(" - A1: ")
-        stream.write(str(round(a1_acc, 5)))
+        stream.write(str(a1_acc.numpy()))
         stream.write(" - A2: ")
-        stream.write(str(round(a2_acc, 5)))
+        stream.write(str(a2_acc.numpy()))
         stream.write('\n')
         for index, batch in enumerate(validation):
             mask_accuracy = batch[5]
@@ -376,30 +389,33 @@ def inference(dataset, data_file, validation_file, buffer_size):
             stream.write(str(round(label_accuracy, 5)))
             stream.write(" - ")
             stream.write('\n')
-            # for (mask, mask_hat, mask_len, sm, sm_hat) in zip(batch[0], batch[1], batch[2], batch[3], batch[4]):
-            #     mask_len = int(mask_len)
-            #     for token in mask[0:mask_len]:
-            #         stream.write(str(token))
-            #         stream.write(" ")
-            #     stream.write(";")
-            #     for token in mask_hat[0:mask_len]:
-            #         stream.write(str(token))
-            #         stream.write(" ")
-            #     stream.write(";")
-            #     stream.write(str(sm))
-            #     stream.write(";")
-            #     stream.write(str(sm_hat))
-            #     stream.write('\n')
+            if c.debug:
+                for (mask, mask_hat, mask_len, sm, sm_hat) in zip(batch[0], batch[1], batch[2], batch[3], batch[4]):
+                    mask_len = int(mask_len)
+                    for token in mask[0:mask_len]:
+                        stream.write(str(token))
+                        stream.write(" ")
+                    stream.write(";")
+                    for token in mask_hat[0:mask_len]:
+                        stream.write(str(token))
+                        stream.write(" ")
+                    stream.write(";")
+                    stream.write(str(sm))
+                    stream.write(";")
+                    stream.write(str(sm_hat))
+                    stream.write('\n')
         stream.close()
 
 
 def run_bert():
-    global c, train_data, test_data
+    global c
 
     build_model()
-    train_model()
-    inference(train_data, c.train_data_file, c.train_validation_file, c.train_buffer_size)
-    inference(test_data, c.test_data_file, c.test_validation_file, c.test_buffer_size)
+    train_data = load_data(c.train_data_file, c.train_buffer_size)
+    test_data = load_data(c.test_data_file, c.test_buffer_size)
+    train_model(train_data, test_data)
+    inference(train_data, c.train_validation_file, c.train_buffer_size)
+    inference(test_data, c.test_validation_file, c.test_buffer_size)
     return
 
 

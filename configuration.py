@@ -32,6 +32,7 @@ class Configuration(object):
     train = None
     infer = None
     eager = None
+    debug = None
 
     # gpu
     gpu_count = None
@@ -96,6 +97,8 @@ class Configuration(object):
         print("INFER = {}".format(self.infer))
         self.eager = self.configuration["execution"]["eager"]
         print("EAGER = {}".format(self.eager))
+        self.debug = self.configuration["execution"]["debug"]
+        print("DEBUG = {}".format(self.debug))
 
         # gpu
         if self.eager:

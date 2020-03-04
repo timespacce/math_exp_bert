@@ -334,34 +334,31 @@ def inference(dataset, validation_file, buffer_size):
     steps = buffer_size / c.batch_size
     l1_acc, a1_acc, a2_acc = 0, 0, 0
 
-    with strategy.scope():
-        tf_dataset = strategy.experimental_distribute_dataset(dataset)
+    for batch, (in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp) in enumerate(dataset):
+        enc_padding_mask = create_mask(in_mask)
+        y_hat_mask, y_hat_ns = model(in_seq, enc_padding_mask, in_seg, in_ind)
+        l1 = loss_function(y_mask, y_weight, y_hat_mask, y_sp, y_hat_ns)
+        a1, a2 = accuracy_function(y_mask, y_weight, y_hat_mask, y_sp, y_hat_ns)
+        l1_acc, a1_acc, a2_acc = l1_acc + l1, a1_acc + a1, a2_acc + a2
 
-        for batch, (in_seq, in_mask, in_seg, in_ind, y_mask, y_weight, y_sp) in enumerate(tf_dataset):
-            enc_padding_mask = create_mask(in_mask)
-            y_hat_mask, y_hat_ns = model(in_seq, enc_padding_mask, in_seg, in_ind)
-            l1 = loss_function(y_mask, y_weight, y_hat_mask, y_sp, y_hat_ns)
-            a1, a2 = accuracy_function(y_mask, y_weight, y_hat_mask, y_sp, y_hat_ns)
-            l1_acc, a1_acc, a2_acc = l1_acc + l1, a1_acc + a1, a2_acc + a2
+        tokens = tf.argmax(y_hat_mask, axis=2)
+        same_paper = tf.argmax(y_hat_ns, axis=1)
+        mask_len = y_weight.numpy().sum(axis=1)
 
-            tokens = tf.argmax(y_hat_mask, axis=2)
-            same_paper = tf.argmax(y_hat_ns, axis=1)
-            mask_len = y_weight.numpy().sum(axis=1)
+        y_mask = np.int32(y_mask.numpy())
+        tokens = np.int32(tokens.numpy())
+        y_sp = np.int32(y_sp.numpy())
+        same_paper = same_paper.numpy()
+        mask_accuracy = a1.numpy()
+        label_accuracy = a2.numpy()
 
-            y_mask = np.int32(y_mask.numpy())
-            tokens = np.int32(tokens.numpy())
-            y_sp = np.int32(y_sp.numpy())
-            same_paper = same_paper.numpy()
-            mask_accuracy = a1.numpy()
-            label_accuracy = a2.numpy()
+        entry = (y_mask, tokens, mask_len, y_sp, same_paper, mask_accuracy, label_accuracy)
+        validation.append(entry)
 
-            entry = (y_mask, tokens, mask_len, y_sp, same_paper, mask_accuracy, label_accuracy)
-            validation.append(entry)
-
-            w = batch + 1
-            l1_mu, a1_mu, a2_mu = l1_acc / w, a1_acc / w, a2_acc / w
-            percent = 1e2 * (batch + 1) / steps
-            printf("INFERENCE : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4}", batch, percent, l1_mu, a1_mu, a2_mu)
+        w = batch + 1
+        l1_mu, a1_mu, a2_mu = l1_acc / w, a1_acc / w, a2_acc / w
+        percent = 1e2 * (batch + 1) / steps
+        printf("INFERENCE : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4}", batch, percent, l1_mu, a1_mu, a2_mu)
 
     l1_acc, a1_acc, a2_acc = l1_acc / steps, a1_acc / steps, a2_acc / steps
 

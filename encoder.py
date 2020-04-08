@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+from gelu import GeLU
 from mha import MultiHeadAttention
 
 
@@ -18,7 +19,8 @@ class EncoderLayer(tf.keras.layers.Layer):
         self.ffn1 = tf.keras.layers.Dense(self.hidden_size)
 
         self.intermediate = tf.keras.layers.Dense(self.intermediate_size)
-        self.leaky_relu = tf.keras.layers.LeakyReLU(alpha=1e-1)
+        # self.activation = tf.keras.layers.LeakyReLU(alpha=1e-1)
+        self.activation = GeLU()
 
         self.ffn3 = tf.keras.layers.Dense(self.hidden_size)
 
@@ -39,7 +41,7 @@ class EncoderLayer(tf.keras.layers.Layer):
 
         # INTERMEDIATE PROJECTION
         ffn = self.intermediate(bn)
-        relu = self.leaky_relu(ffn)
+        relu = self.activation(ffn)
 
         # DOWN PROJECTION
         ffn = self.ffn3(relu)

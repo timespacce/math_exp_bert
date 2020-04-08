@@ -16,7 +16,7 @@ def scaled_dot_product_attention(q, k, v, mask=None):
     """
 
     # = (batch_size, seq_len_q, emb_w) * transpose((batch_size, seq_len_k, emb_w), axes=[0, 2, 1])
-    # = (batch_size, seq_len_q, emb_w * (batch_size, emb_w, seq_len_k)
+    # = (batch_size, seq_len_q, emb_w) * (batch_size, emb_w, seq_len_k)
     # = (batch_size, seq_len_q, seq_len_k)
     matmul_qk = tf.matmul(q, k, transpose_b=True)
 
@@ -28,7 +28,7 @@ def scaled_dot_product_attention(q, k, v, mask=None):
         # Google BERT
         expanded_mask = (1.0 - expanded_mask) * -10000.0
         # Google Transformer
-        # expanded_mask * 1e-9
+        # expanded_mask *= -1e9
         scaled_attention_logits += expanded_mask
 
     # = (batch-size, seq_len_q, seq_len_k) . sum(:, axes=[2]) = (batch_size, seq_len_q, 1)

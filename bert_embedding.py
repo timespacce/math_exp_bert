@@ -82,12 +82,21 @@ class BERT_Embedding(tf.keras.layers.Layer):
         return y_hat
 
     def preprocess_google(self, in_seq, in_seg):
+        """
+
+        Args:
+            in_seq:             (batch_size, sequence_len)
+            in_seg:             (batch_size, sequence_len)
+
+        Returns:
+
+        """
         seq_len = in_seq.shape[1]
 
-        y_hat = tf.gather(self.word_embeddings, tf.cast(in_seq, tf.int32))
-        y_hat += self.positional_encoding[:seq_len, :]
-        in_seg_one_hot = tf.one_hot(in_seg, 2)
-        y_hat += tf.matmul(in_seg_one_hot, self.type_embeddings)
+        y_hat = tf.gather(self.word_embeddings, tf.cast(in_seq, tf.int32))  # (batch_size, sequence_len, hidden_size)
+        y_hat += self.positional_encoding[:seq_len, :]  # (batch_size, sequence_len, hidden_size)
+        in_seg_one_hot = tf.one_hot(in_seg, 2)  # (batch_size, sequence_len, 2)
+        y_hat += tf.matmul(in_seg_one_hot, self.type_embeddings)  # (batch_size, sequence_len, hidden_size)
         return y_hat
 
     def call(self, in_seq, in_seg):

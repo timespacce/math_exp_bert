@@ -10,6 +10,7 @@ import tensorflow_datasets as tfds
 
 from configuration import Configuration
 from mask_loss import MaskLoss
+from optimization import LearningRateScheduler
 from tokenizer import Tokenizer
 from transformer import Transformer
 
@@ -93,6 +94,8 @@ def build_model():
     tokenizer = Tokenizer(c.vocab_folder)
     vocab_size = tokenizer.vocab_size
 
+    steps = c.epochs * (c.train_buffer_size / c.batch_size)
+
     with strategy.scope():
         model = Transformer(max_seq_len=c.max_seq_len,
                             b_p_gpu=c.b_p_gpu,
@@ -107,7 +110,16 @@ def build_model():
         token_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='none')
         sp_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='none')
 
-        optimizer = tf.keras.optimizers.Adam(c.learning_rate, beta_1=0.9, beta_2=0.98, epsilon=1e-6)
+        alpha_2, warmup_steps, decay_steps, power = 0.0, steps, steps, 1
+
+        learning_rate_scheduler = LearningRateScheduler(alpha_1=c.learning_rate,
+                                                        alpha_2=alpha_2,
+                                                        hidden_size=c.hidden_size,
+                                                        warmup_steps=warmup_steps,
+                                                        decay_steps=decay_steps,
+                                                        power=power)
+
+        optimizer = tf.keras.optimizers.Adam(learning_rate_scheduler, beta_1=0.9, beta_2=0.98, epsilon=1e-6)
 
         ckpt = tf.train.Checkpoint(model=model, optimizer=optimizer)
         ckpt_manager = tf.train.CheckpointManager(ckpt, c.checkpoint_folder, max_to_keep=5)
@@ -122,6 +134,9 @@ def build_model():
 
 def load_data(data_file, buffer_size):
     global c
+
+    if buffer_size <= 0:
+        return []
 
     counter = Value('i', -1)
     mutex = Value('i', 0)

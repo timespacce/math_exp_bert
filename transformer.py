@@ -2,6 +2,7 @@ import tensorflow as tf
 
 from bert_embedding import BERT_Embedding
 from encoder import Encoder
+from gelu import GeLU
 
 
 class Transformer(tf.keras.Model):
@@ -28,7 +29,8 @@ class Transformer(tf.keras.Model):
         self.encoder = Encoder(self.num_layers, self.hidden_size, self.intermediate_size, self.num_heads, self.rate)
 
         self.wh = tf.keras.layers.Dense(self.hidden_size)
-        self.wh_leaky_relu = tf.keras.layers.LeakyReLU(alpha=1e-1)
+        # self.activation = tf.keras.layers.LeakyReLU(alpha=1e-1)
+        self.activation = GeLU()
         self.post_bn = tf.keras.layers.LayerNormalization(epsilon=1e-6)
         self.sm_seq = tf.keras.layers.Softmax(axis=-1)
 
@@ -58,7 +60,7 @@ class Transformer(tf.keras.Model):
 
         y_hat_mask = tf.gather(y_hat, mask_indices, batch_dims=1)  # (batch_size, mask_len, embedding_len)
         y_hat_mask = self.wh(y_hat_mask)  # (batch_size, mask_len, embedding_len)
-        y_hat_mask = self.wh_leaky_relu(y_hat_mask)
+        y_hat_mask = self.activation(y_hat_mask)
         y_hat_mask = self.post_bn(y_hat_mask)  # (batch_size, mask_len, embedding_len)
 
         y_hat_mask = tf.matmul(y_hat_mask, self.bert_embedding.get_word_embeddings(), transpose_b=True)
@@ -68,9 +70,6 @@ class Transformer(tf.keras.Model):
         y_hat_ns = y_hat[:, 0:1, :]
         y_hat_ns = tf.squeeze(y_hat_ns, axis=1)  # (batch_size, 1, hidden_size)
         y_hat_ns = self.wns(y_hat_ns)  # (batch_size, 1, 2)
-
-        # @TODO CHECK!!
-
         y_hat_ns = self.sm_ns(y_hat_ns)  # (batch_size, 1, 2)
 
         return y_hat_mask, y_hat_ns

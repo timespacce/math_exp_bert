@@ -49,7 +49,7 @@ class MultiHeadAttentionTest(unittest.TestCase):
         d_model = 128
         num_heads = 8
 
-        mha = MultiHeadAttention(d_model=d_model, num_heads=num_heads)
+        mha = MultiHeadAttention(hidden_size=d_model, num_heads=num_heads)
 
         k = tf.constant([[10, 0, 0],
                          [0, 10, 0],

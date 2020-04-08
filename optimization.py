@@ -25,7 +25,7 @@ class LearningRateScheduler(tf.keras.optimizers.schedules.LearningRateSchedule):
         relative_decay = step / self.decay_steps
         polynomial_decayed_alpha = (self.alpha_1 - self.alpha_2) * ((1 - relative_decay) ** self.power) + self.alpha_2
 
-        is_warmup = 1.0 if step <= self.warmup_steps else 0.0
+        is_warmup = tf.cond(tf.less(step, self.warmup_steps), lambda: 1.0, lambda: 0.0)
         relative_warmup = step / self.warmup_steps
         warmup_alpha = self.alpha_1 * relative_warmup
         self.alpha_3 = (1.0 - is_warmup) * polynomial_decayed_alpha + is_warmup * warmup_alpha

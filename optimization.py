@@ -1,6 +1,4 @@
 import tensorflow as tf
-import numpy as np
-import matplotlib.pyplot as plt
 
 
 class LearningRateScheduler(tf.keras.optimizers.schedules.LearningRateSchedule):
@@ -33,24 +31,3 @@ class LearningRateScheduler(tf.keras.optimizers.schedules.LearningRateSchedule):
         self.alpha_3 = (1.0 - is_warmup) * polynomial_decayed_alpha + is_warmup * warmup_alpha
 
         return self.alpha_3
-
-
-def run():
-    steps, alpha_1, alpha_2, hidden_size, warmup_steps, decay_steps, power = 1e3, 1e-4, 0.0, 128, 1e3, 1e3, 1
-
-    learning_rate_scheduler = LearningRateScheduler(alpha_1=alpha_1,
-                                                    alpha_2=alpha_2,
-                                                    hidden_size=hidden_size,
-                                                    warmup_steps=warmup_steps,
-                                                    decay_steps=decay_steps,
-                                                    power=power)
-    x = np.arange(steps)
-    y = [learning_rate_scheduler(j) for j in x]
-
-    plt.plot(x, y)
-    plt.show()
-    return
-
-
-if __name__ == "__main__":
-    run()

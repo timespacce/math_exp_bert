@@ -115,6 +115,7 @@ def build_model():
         learning_rate_scheduler = LearningRateScheduler(alpha_1=c.learning_rate,
                                                         alpha_2=alpha_2,
                                                         hidden_size=c.hidden_size,
+                                                        training_steps=steps,
                                                         warmup_steps=warmup_steps,
                                                         decay_steps=decay_steps,
                                                         power=power)

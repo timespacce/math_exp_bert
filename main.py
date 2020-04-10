@@ -10,7 +10,7 @@ import tensorflow_datasets as tfds
 
 from configuration import Configuration
 from mask_loss import MaskLoss
-from optimization import LearningRateScheduler
+from optimization import LearningRateScheduler, CustomOptimizer
 from tokenizer import Tokenizer
 from transformer import Transformer
 
@@ -110,7 +110,7 @@ def build_model():
         token_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='none')
         sp_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='none')
 
-        alpha_2, warmup_steps, decay_steps, power = 0.0, steps, steps, 1
+        alpha_2, warmup_steps, decay_steps, power = 0.0, steps // 2, steps, 1
 
         learning_rate_scheduler = LearningRateScheduler(alpha_1=c.learning_rate,
                                                         alpha_2=alpha_2,
@@ -120,7 +120,8 @@ def build_model():
                                                         decay_steps=decay_steps,
                                                         power=power)
 
-        optimizer = tf.keras.optimizers.Adam(learning_rate_scheduler, beta_1=0.9, beta_2=0.98, epsilon=1e-6)
+        # optimizer = tf.keras.optimizers.Adam(learning_rate_scheduler, beta_1=0.9, beta_2=0.98, epsilon=1e-6)
+        optimizer = CustomOptimizer(learning_rate=learning_rate_scheduler, beta_1=0.9, beta_2=0.999, epsilon=1e-6, decay=0.01)
 
         ckpt = tf.train.Checkpoint(model=model, optimizer=optimizer)
         ckpt_manager = tf.train.CheckpointManager(ckpt, c.checkpoint_folder, max_to_keep=5)

@@ -40,7 +40,7 @@ class LearningRateScheduler(tf.keras.optimizers.schedules.LearningRateSchedule):
 
 class CustomOptimizer(optimizer_v2.OptimizerV2):
 
-    def __init__(self, learning_rate, beta_1, beta_2, epsilon, decay, name='Optimizer', **kwargs):
+    def __init__(self, learning_rate, beta_1, beta_2, epsilon, decay, name='CustomOptimizer', **kwargs):
         super(CustomOptimizer, self).__init__(name, **kwargs)
         self._set_hyper('learning_rate', kwargs.get('lr', learning_rate))
         self._set_hyper('decay', decay)
@@ -95,10 +95,13 @@ class CustomOptimizer(optimizer_v2.OptimizerV2):
         epsilon = coefficients['epsilon']
         decay = coefficients['decay']
 
-        m.assign(beta_1_t * m + (1.0 - beta_1_t) * grad)
-        v.assign(beta_2_t * v + (1.0 - beta_2_t) * grad * grad)
+        m_t = m.assign(beta_1_t * m + (1.0 - beta_1_t) * grad, use_locking=self._use_locking)
+        v_t = v.assign(beta_2_t * v + (1.0 - beta_2_t) * grad * grad, use_locking=self._use_locking)
 
-        var.assign_sub(lr_t * (m / (tf.sqrt(v) + epsilon) + decay * var))
+        var_update = var.assign_sub(lr_t * (m / (tf.sqrt(v) + epsilon) + decay * var), use_locking=self._use_locking)
+
+        updates = [var_update, m_t, v_t]
+        return tf.group(*updates)
 
     def _resource_apply_sparse(self, grad, handle, indices, apply_state):
         m = self.get_slot(handle, 'm')

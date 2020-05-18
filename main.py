@@ -85,14 +85,13 @@ def load_configuration():
     configuration_file = "configuration.json"
     c = Configuration(configuration_file)
 
+    return
+
 
 def build_model():
     global c, strategy, model, mask_loss, optimizer, ckpt_manager, token_loss_func, sp_loss_func
 
     strategy = tf.distribute.MirroredStrategy()
-
-    tokenizer = Tokenizer(c.vocab_folder)
-    vocab_size = tokenizer.vocab_size
 
     steps = c.epochs * (c.train_buffer_size / c.batch_size)
 
@@ -205,14 +204,13 @@ def load_data(data_file, buffer_size):
             mask_ws[index] = mask_w
             sps[index] = sp
 
-        printf("DATA LOADING : {0:.3}%", (index / buffer_size) * 1e2)
+        printf("DATA LOADING : {0:.3}% ", (index / buffer_size) * 1e2)
 
     pool = ThreadPool(c.cpu_threads)
     pool.map(load_sample, sequences)
     pool.close()
     pool.join()
 
-    print("")
     print("{} has been LOADED".format(data_file))
 
     in_seqs = tf.data.Dataset.from_tensor_slices(in_seqs)
@@ -296,7 +294,7 @@ def train_model(train_data, test_data):
             else:
                 return loss, mask_accuracy, label_accuracy
 
-        template = 'E: {} ({:.2f}%) | Loss: [{:.4f}, {:.4f}] | Mask / Label Acc: [{:.4f}, {:.4f}, {:.4f}, {:.4f}] | delta = {:.2f}'
+        template = 'E: {} ({:.2f}%) | Loss: [{:.4f}, {:.4f}] | Mask / Label Acc: [{:.4f}, {:.4f}, {:.4f}, {:.4f}] | delta = {:.2f} \n'
 
         tr_steps = c.train_buffer_size / c.batch_size
         va_steps = c.test_buffer_size / c.batch_size + 1e-9
@@ -313,7 +311,7 @@ def train_model(train_data, test_data):
                 tr_l1_acc, tr_a1_acc, tr_a2_acc = tr_l1_acc + tr_l1, tr_a1_acc + tr_a1, tr_a2_acc + tr_a2
                 tr_l1_mu, tr_a1_mu, tr_a2_mu = tr_l1_acc / w, tr_a1_acc / w, tr_a2_acc / w
                 percent = 1e2 * w / tr_steps
-                printf("TRAIN_STEP : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4}", batch, percent, tr_l1_mu, tr_a1_mu, tr_a2_mu)
+                printf("TRAIN_STEP : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4} ", batch, percent, tr_l1_mu, tr_a1_mu, tr_a2_mu)
 
             tr_l1_acc, tr_a1_acc, tr_a2_acc = tr_l1_acc / tr_steps, tr_a1_acc / tr_steps, tr_a2_acc / tr_steps
 
@@ -326,14 +324,13 @@ def train_model(train_data, test_data):
                 va_l1_acc, va_a1_acc, va_a2_acc = va_l1_acc + va_l1, va_a1_acc + va_a1, va_a2_acc + va_a2
                 va_l1_mu, va_a1_mu, va_a2_mu = va_l1_acc / w, va_a1_acc / w, va_a2_acc / w
                 percent = 1e2 * w / va_steps
-                printf("TEST_STEP : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4}", batch, percent, va_l1_mu, va_a1_mu, va_a2_mu)
+                printf("TEST_STEP : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4} ", batch, percent, va_l1_mu, va_a1_mu, va_a2_mu)
 
             va_l1_acc, va_a1_acc, va_a2_acc = va_l1_acc / va_steps, va_a1_acc / va_steps, va_a2_acc / va_steps
 
             percent = (e / c.epochs) * 1e2
             delta = time.time() - start
-            print("\r", end="")
-            print(template.format(e, percent, tr_l1_acc, va_l1_acc, tr_a1_acc, tr_a2_acc, va_a1_acc, va_a2_acc, delta))
+            printf(template.format(e, percent, tr_l1_acc, va_l1_acc, tr_a1_acc, tr_a2_acc, va_a1_acc, va_a2_acc, delta))
 
             if (e + 1) % 5 == 0:
                 ckpt_save_path = ckpt_manager.save()
@@ -375,12 +372,11 @@ def inference(dataset, validation_file, buffer_size):
         w = batch + 1
         l1_mu, a1_mu, a2_mu = l1_acc / w, a1_acc / w, a2_acc / w
         percent = 1e2 * (batch + 1) / steps
-        printf("INFERENCE : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4}", batch, percent, l1_mu, a1_mu, a2_mu)
+        printf("INFERENCE : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4} ", batch, percent, l1_mu, a1_mu, a2_mu)
 
     l1_acc, a1_acc, a2_acc = l1_acc / steps, a1_acc / steps, a2_acc / steps
 
     template = "VALIDATION : Loss = {:.4} Mask / Label = {:.4} {:.4}"
-    print("\r", end="")
     print(template.format(l1_acc, a1_acc, a2_acc))
 
     validation.sort(key=lambda x: x[5] + x[6], reverse=True)
@@ -424,6 +420,7 @@ def inference(dataset, validation_file, buffer_size):
 def run_bert():
     global c
 
+    load_configuration()
     build_model()
     train_data = load_data(c.train_data_file, c.train_buffer_size)
     test_data = load_data(c.test_data_file, c.test_buffer_size)
@@ -434,8 +431,7 @@ def run_bert():
 
 
 if __name__ == "__main__":
-    load_configuration()
     a = time.time()
     run_bert()
-    b = (time.time() - a) * 1e3
-    print("BERT NETWORK in {0}".format(b))
+    b = (time.time() - a)
+    print("BERT NETWORK in {0} s".format(b))

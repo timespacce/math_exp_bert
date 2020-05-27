@@ -3,17 +3,29 @@ import tensorflow as tf
 
 
 class Configuration(object):
-    # data
+    # checkpoints
     checkpoint_folder = None
     vocab_folder = None
-    train_data_file = None
-    test_data_file = None
+
+    # data set
+    train_data_dir = None
+    test_data_dir = None
+
+    x_file = None
+    x_id_file = None
+    x_seg_file = None
+    y_mask_file = None
+    y_id_file = None
+    y_w_file = None
+    sp_file = None
+
+    # validation
     train_validation_file = None
     test_validation_file = None
     cpu_threads = None
 
     # model
-    max_len = None
+    max_seq_len = None
     mask_prob = None
     num_layers = None
     hidden_size = None
@@ -25,6 +37,7 @@ class Configuration(object):
     batch_size = None
     train_buffer_size = None
     test_buffer_size = None
+    blocks = None
     epochs = None
     learning_rate = None
 
@@ -42,15 +55,34 @@ class Configuration(object):
         with open(configuration_file) as stream:
             self.configuration = json.load(stream)
 
-        # data
+        # checkpoints
         self.checkpoint_folder = self.configuration["data"]["checkpoint_folder"]
         print("CHECKPOINT_FOLDER = {}".format(self.checkpoint_folder))
         self.vocab_folder = self.configuration["data"]["vocab_folder"]
         print("VOCAB_FOLDER = {}".format(self.vocab_folder))
-        self.train_data_file = self.configuration["data"]["train_data_file"]
-        print("TRAIN_DATA_FILE = {}".format(self.train_data_file))
-        self.test_data_file = self.configuration["data"]["test_data_file"]
-        print("TEST_DATA_FILE = {}".format(self.test_data_file))
+
+        # data set
+        self.train_data_dir = self.configuration["data"]["train_data_dir"]
+        print("TRAN_DATA_DIR = {}".format(self.train_data_dir))
+        self.test_data_dir = self.configuration["data"]["test_data_dir"]
+        print("TEST_DATA_DIR = {}".format(self.test_data_dir))
+
+        self.x_file = "x.set"
+        print("X_FILE = {}".format(self.x_file))
+        self.x_id_file = "x_id.set"
+        print("X_ID_FILE = {}".format(self.x_id_file))
+        self.x_seg_file = "x_seg.set"
+        print("X_SEG_FILE = {}".format(self.x_seg_file))
+        self.y_mask_file = "y_mask.set"
+        print("Y_MASK_FILE = {}".format(self.y_mask_file))
+        self.y_id_file = "y_id.set"
+        print("Y_ID_FILE = {}".format(self.y_id_file))
+        self.y_w_file = "y_w.set"
+        print("Y_W_FILE = {}".format(self.y_w_file))
+        self.sp_file = "sp.set"
+        print("SP_FILE = {}".format(self.sp_file))
+
+        # validation
         self.train_validation_file = self.configuration["data"]["train_validation_file"]
         print("TRAIN_VALIDATION_FILE = {}".format(self.train_validation_file))
         self.test_validation_file = self.configuration["data"]["test_validation_file"]
@@ -85,6 +117,8 @@ class Configuration(object):
         print("TRAIN_BUFFER_SIZE = {}".format(self.train_buffer_size))
         self.test_buffer_size = self.configuration["training"]["test_buffer_size"]
         print("TEST_BUFFER_SIZE = {}".format(self.test_buffer_size))
+        self.blocks = self.configuration["training"]["blocks"]
+        print("BLOCKS = {}".format(self.blocks))
         self.epochs = self.configuration["training"]["epochs"]
         print("EPOCHS = {}".format(self.epochs))
         self.learning_rate = self.configuration["training"]["learning_rate"]

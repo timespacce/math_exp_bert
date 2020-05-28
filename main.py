@@ -25,10 +25,8 @@ def printf(template, *args):
 
 
 def create_mask(input_mask):
-    batch_size = input_mask.shape[0]
-    seq_len = input_mask.shape[1]
-    broadcast = tf.ones((batch_size, seq_len, 1), dtype=np.float32)
-    mask = tf.reshape(input_mask, shape=(batch_size, 1, seq_len))
+    broadcast = tf.ones((c.batch_size, c.max_seq_len, 1), dtype=np.float32)
+    mask = tf.reshape(input_mask, shape=(c.batch_size, 1, c.max_seq_len))
     enc_padding_mask = broadcast * mask  # (batch_size, seq_len, seq_len)
     return enc_padding_mask
 
@@ -124,6 +122,8 @@ def build_model():
 def load_block(target, block_id, buffer_size):
     global c
 
+    begin = time.time()
+
     prefix = target + "block_{0}/".format(block_id)
     x_file = prefix + c.x_file
     x_id_file = prefix + c.x_id_file
@@ -211,7 +211,9 @@ def load_block(target, block_id, buffer_size):
     tf_dataset = tf.data.Dataset.zip((tf_xs, tf_xs_id, tf_xs_seg, tf_ys_mask, tf_ys_id, tf_ys_w, tf_sps))
     tf_dataset = tf_dataset.batch(batch_size=c.batch_size)
 
-    # print("BLOCK - {0} ~ {1}.".format(block_id, count))
+    runtime = time.time() - begin
+
+    print("BLOCK_{0} with {1} in {2:.3} s.".format(block_id, count, runtime))
 
     return tf_dataset
 
@@ -240,16 +242,25 @@ def train_model():
         def test_step(x, x_id, x_seg, y_mask, y_id, y_w, sp):
             enc_padding_mask = create_mask(x_id)
 
-            with tf.GradientTape() as tape:
-                y_hat_mask, y_hat_sp = model(x, enc_padding_mask, x_seg, y_id)
-                loss = loss_function(y_mask, y_w, y_hat_mask, sp, y_hat_sp)
-                mask_accuracy, label_accuracy = accuracy_function(y_mask, y_w, y_hat_mask, sp, y_hat_sp)
+            y_hat_mask, y_hat_sp = model(x, enc_padding_mask, x_seg, y_id)
+            loss = loss_function(y_mask, y_w, y_hat_mask, sp, y_hat_sp)
+            mask_accuracy, label_accuracy = accuracy_function(y_mask, y_w, y_hat_mask, sp, y_hat_sp)
 
             return loss, mask_accuracy, label_accuracy
 
         @tf.function
-        def distributed_step(x, x_id, x_seg, y_mask, y_id, y_w, sp, func):
-            loss, mask_accuracy, label_accuracy = strategy.experimental_run_v2(func, args=(x, x_id, x_seg, y_mask, y_id, y_w, sp))
+        def distributed_train_step(x, x_id, x_seg, y_mask, y_id, y_w, sp):
+            loss, mask_accuracy, label_accuracy = strategy.experimental_run_v2(train_step, args=(x, x_id, x_seg, y_mask, y_id, y_w, sp))
+            if strategy.num_replicas_in_sync > 1:
+                return tf.reduce_sum(loss.values, axis=-1) / c.gpu_count, \
+                       tf.reduce_sum(mask_accuracy.values, axis=-1) / c.gpu_count, \
+                       tf.reduce_sum(label_accuracy.values, axis=-1) / c.gpu_count
+            else:
+                return loss, mask_accuracy, label_accuracy
+
+        @tf.function
+        def distributed_test_step(x, x_id, x_seg, y_mask, y_id, y_w, sp):
+            loss, mask_accuracy, label_accuracy = strategy.experimental_run_v2(test_step, args=(x, x_id, x_seg, y_mask, y_id, y_w, sp))
             if strategy.num_replicas_in_sync > 1:
                 return tf.reduce_sum(loss.values, axis=-1) / c.gpu_count, \
                        tf.reduce_sum(mask_accuracy.values, axis=-1) / c.gpu_count, \
@@ -274,28 +285,10 @@ def train_model():
 
         tf_train_dataset, tf_test_dataset = None, None
 
-        @tf.function
-        def run_distributed_func(dataset, func, steps, state):
-            l1_acc, a1_acc, a2_acc, step = state
-
-            for x, x_id, x_seg, y_mask, y_id, y_w, sp in dataset:
-                l1, a1, a2 = distributed_step(x, x_id, x_seg, y_mask, y_id, y_w, sp, func)
-
-                step, l1_acc, a1_acc, a2_acc = step + 1, l1_acc + l1, a1_acc + a1, a2_acc + a2
-                l1_mu, a1_mu, a2_mu = l1_acc / step, a1_acc / step, a2_acc / step
-                percent = 1e2 * (step / steps)
-                printf("STEP : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4} ", step, percent, l1_mu, a1_mu, a2_mu)
-
-            return l1_acc, a1_acc, a2_acc, (l1_acc, a1_acc, a2_acc, step)
-
-        @tf.function
-        def run_distributed_epoch(e):
-            global tf_train_dataset, tf_test_dataset
-
+        for e in range(c.epochs):
             start = time.time()
-            tr_l1_acc, tr_a1_acc, tr_a2_acc = 0, 0, 0
-            va_l1_acc, va_a1_acc, va_a2_acc = 0, 0, 0
-            tr_state, va_state = (0, 0, 0, 0), (0, 0, 0, 0)
+            tr_l1_acc, tr_a1_acc, tr_a2_acc, tr_step = 0, 0, 0, 0
+            va_l1_acc, va_a1_acc, va_a2_acc, va_step = 0, 0, 0, 0
 
             for b in range(c.train_blocks):
                 if c.train_blocks > 1:
@@ -305,13 +298,21 @@ def train_model():
                         tf_train_dataset = load_train_block(b)
 
                 if e <= 0 and b <= 0:
-                    tf_test_dataset = load_test_block(0)
+                    tf_test_dataset = load_test_block(b)
 
-                tr_l1, tr_a1, tr_a2, tr_state = run_distributed_func(tf_train_dataset, train_step, tr_steps, tr_state)
-                va_l1, va_a1, va_a2, va_state = run_distributed_func(tf_test_dataset, test_step, va_steps, va_state)
+                for x, x_id, x_seg, y_mask, y_id, y_w, sp in tf_train_dataset:
+                    l1, a1, a2 = distributed_train_step(x, x_id, x_seg, y_mask, y_id, y_w, sp)
+                    tr_l1_acc, tr_a1_acc, tr_a2_acc, tr_step = tr_l1_acc + l1, tr_a1_acc + a1, tr_a2_acc + a2, tr_step + 1
+                    l1_mu, a1_mu, a2_mu = tr_l1_acc / tr_step, tr_a1_acc / tr_step, tr_a2_acc / tr_step
+                    percent = 1e2 * (tr_step / tr_steps)
+                    printf("TRAIN STEP : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4} ", tr_step, percent, l1_mu, a1_mu, a2_mu)
 
-                tr_l1_acc, tr_a1_acc, tr_a2_acc = tr_l1_acc + tr_l1, tr_a1_acc + tr_a1, tr_a2_acc + tr_a2
-                va_l1_acc, va_a1_acc, va_a2_acc = va_l1_acc + va_l1, va_a1_acc + va_a1, va_a2_acc + va_a2
+                for x, x_id, x_seg, y_mask, y_id, y_w, sp in tf_test_dataset:
+                    l1, a1, a2 = distributed_test_step(x, x_id, x_seg, y_mask, y_id, y_w, sp)
+                    va_l1_acc, va_a1_acc, va_a2_acc, va_step = va_l1_acc + l1, va_a1_acc + a1, va_a2_acc + a2, va_step + 1
+                    l1_mu, a1_mu, a2_mu = va_l1_acc / va_step, va_a1_acc / va_step, va_a2_acc / va_step
+                    percent = 1e2 * (va_step / va_steps)
+                    printf("TEST STEP : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4} ", va_step, percent, l1_mu, a1_mu, a2_mu)
 
             tr_l1_acc, tr_a1_acc, tr_a2_acc = tr_l1_acc / tr_steps, tr_a1_acc / tr_steps, tr_a2_acc / tr_steps
             va_l1_acc, va_a1_acc, va_a2_acc = va_l1_acc / va_steps, va_a1_acc / va_steps, va_a2_acc / va_steps
@@ -319,10 +320,9 @@ def train_model():
             delta, percent = time.time() - start, (e / c.epochs) * 1e2
             printf(template.format(e, percent, tr_l1_acc, va_l1_acc, tr_a1_acc, tr_a2_acc, va_a1_acc, va_a2_acc, delta))
 
-        for e in range(c.epochs):
-            run_distributed_epoch(e)
             if (e + 1) % 5 != 0:
                 continue
+
             ckpt_save_path = ckpt_manager.save()
             print('Saving checkpoint for epoch {} at {}'.format(e + 1, ckpt_save_path))
 
@@ -378,6 +378,7 @@ def inference(dataset, validation_file, buffer_size, blocks):
     batch, sp_count, sp_acc, n_sp_count, n_sp_acc = 0, 1e-7, 0, 1e-7, 0
 
     with strategy.scope():
+
         for b in range(blocks):
             train_dataset = load_block(dataset, b, buffer_size)
             tf_train_dataset = strategy.experimental_distribute_dataset(train_dataset)

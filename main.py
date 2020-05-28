@@ -250,7 +250,7 @@ def train_model():
 
         @tf.function
         def distributed_train_step(x, x_id, x_seg, y_mask, y_id, y_w, sp):
-            loss, mask_accuracy, label_accuracy = strategy.experimental_run_v2(train_step, args=(x, x_id, x_seg, y_mask, y_id, y_w, sp))
+            loss, mask_accuracy, label_accuracy = strategy.run(train_step, args=(x, x_id, x_seg, y_mask, y_id, y_w, sp))
             if strategy.num_replicas_in_sync > 1:
                 return tf.reduce_sum(loss.values, axis=-1) / c.gpu_count, \
                        tf.reduce_sum(mask_accuracy.values, axis=-1) / c.gpu_count, \
@@ -260,7 +260,7 @@ def train_model():
 
         @tf.function
         def distributed_test_step(x, x_id, x_seg, y_mask, y_id, y_w, sp):
-            loss, mask_accuracy, label_accuracy = strategy.experimental_run_v2(test_step, args=(x, x_id, x_seg, y_mask, y_id, y_w, sp))
+            loss, mask_accuracy, label_accuracy = strategy.run(test_step, args=(x, x_id, x_seg, y_mask, y_id, y_w, sp))
             if strategy.num_replicas_in_sync > 1:
                 return tf.reduce_sum(loss.values, axis=-1) / c.gpu_count, \
                        tf.reduce_sum(mask_accuracy.values, axis=-1) / c.gpu_count, \

@@ -29,7 +29,7 @@
   "execution": {
     "train": true,
     "infer": true,
-    "eager": true,
+    "eager": false,
     "debug": true
   }
 }

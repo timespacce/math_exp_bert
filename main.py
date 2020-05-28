@@ -259,16 +259,18 @@ def train_model():
 
         template = 'E: {} ({:.2f}%) | Loss: [{:.4f}, {:.4f}] | Mask / Label Acc: [{:.4f}, {:.4f}, {:.4f}, {:.4f}] | delta = {:.2f} \n'
 
-        def load_data(b_id):
+        def load_train_block(b_id):
             train_data = load_block(c.train_data_dir, b_id, c.train_buffer_size)
-            test_data = load_block(c.test_data_dir, b_id, c.test_buffer_size)
-
             train_dataset = strategy.experimental_distribute_dataset(train_data)
-            test_dataset = strategy.experimental_distribute_dataset(test_data)
-            return train_dataset, test_dataset
+            return train_dataset
 
-        tr_steps = (c.train_buffer_size * c.blocks) // c.batch_size
-        va_steps = (c.test_buffer_size * c.blocks) // c.batch_size
+        def load_test_block(b_id):
+            test_data = load_block(c.test_data_dir, b_id, c.test_buffer_size)
+            test_dataset = strategy.experimental_distribute_dataset(test_data)
+            return test_dataset
+
+        tr_steps = (c.train_buffer_size * c.train_blocks) // c.batch_size
+        va_steps = (c.test_buffer_size * c.test_blocks) // c.batch_size
 
         tf_train_dataset, tf_test_dataset = None, None
 
@@ -284,7 +286,7 @@ def train_model():
                 percent = 1e2 * (step / steps)
                 printf("STEP : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4} ", step, percent, l1_mu, a1_mu, a2_mu)
 
-            return l1_acc, a1_acc, a2_acc, step
+            return l1_acc, a1_acc, a2_acc, (l1_acc, a1_acc, a2_acc, step)
 
         @tf.function
         def run_distributed_epoch(e):
@@ -295,12 +297,15 @@ def train_model():
             va_l1_acc, va_a1_acc, va_a2_acc = 0, 0, 0
             tr_state, va_state = (0, 0, 0, 0), (0, 0, 0, 0)
 
-            for b in range(c.blocks):
-                if c.blocks > 1:
-                    tf_train_dataset, tf_test_dataset = load_data(b)
+            for b in range(c.train_blocks):
+                if c.train_blocks > 1:
+                    tf_train_dataset = load_train_block(b)
                 else:
                     if e <= 0:
-                        tf_train_dataset, tf_test_dataset = load_data(b)
+                        tf_train_dataset = load_train_block(b)
+
+                if e <= 0 and b <= 0:
+                    tf_test_dataset = load_test_block(0)
 
                 tr_l1, tr_a1, tr_a2, tr_state = run_distributed_func(tf_train_dataset, train_step, tr_steps, tr_state)
                 va_l1, va_a1, va_a2, va_state = run_distributed_func(tf_test_dataset, test_step, va_steps, va_state)
@@ -322,7 +327,7 @@ def train_model():
             print('Saving checkpoint for epoch {} at {}'.format(e + 1, ckpt_save_path))
 
 
-def inference(dataset, validation_file, buffer_size):
+def inference(dataset, validation_file, buffer_size, blocks):
     global c, model, optimizer, ckpt_manager
 
     if not c.infer or buffer_size is 0:
@@ -373,7 +378,7 @@ def inference(dataset, validation_file, buffer_size):
     batch, sp_count, sp_acc, n_sp_count, n_sp_acc = 0, 1e-7, 0, 1e-7, 0
 
     with strategy.scope():
-        for b in range(c.blocks):
+        for b in range(blocks):
             train_dataset = load_block(dataset, b, buffer_size)
             tf_train_dataset = strategy.experimental_distribute_dataset(train_dataset)
 
@@ -410,8 +415,8 @@ def run_bert():
     load_configuration()
     build_model()
     train_model()
-    inference(c.train_data_dir, c.train_validation_file, c.train_buffer_size)
-    inference(c.test_data_dir, c.test_validation_file, c.test_buffer_size)
+    inference(c.train_data_dir, c.train_validation_file, c.train_buffer_size, c.train_blocks)
+    inference(c.test_data_dir, c.test_validation_file, c.test_buffer_size, c.test_blocks)
     return
 
 

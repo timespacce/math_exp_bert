@@ -117,8 +117,10 @@ class Configuration(object):
         print("TRAIN_BUFFER_SIZE = {}".format(self.train_buffer_size))
         self.test_buffer_size = self.configuration["training"]["test_buffer_size"]
         print("TEST_BUFFER_SIZE = {}".format(self.test_buffer_size))
-        self.blocks = self.configuration["training"]["blocks"]
-        print("BLOCKS = {}".format(self.blocks))
+        self.train_blocks = self.configuration["training"]["train_blocks"]
+        print("TRAIN_BLOCKS = {}".format(self.train_blocks))
+        self.test_blocks = self.configuration["training"]["test_blocks"]
+        print("TEST_BLOCKS = {}".format(self.test_blocks))
         self.epochs = self.configuration["training"]["epochs"]
         print("EPOCHS = {}".format(self.epochs))
         self.learning_rate = self.configuration["training"]["learning_rate"]

@@ -27,8 +27,9 @@ def printf(template, *args):
 def create_mask(input_mask):
     global c
 
-    broadcast = tf.ones((c.b_p_gpu, c.max_seq_len, 1), dtype=np.float32)
-    mask = tf.reshape(input_mask, shape=(c.b_p_gpu, 1, c.max_seq_len))
+    batch_size = input_mask.shape[0]
+    broadcast = tf.ones((batch_size, c.max_seq_len, 1), dtype=np.float32)
+    mask = tf.reshape(input_mask, shape=(batch_size, 1, c.max_seq_len))
     enc_padding_mask = broadcast * mask  # (batch_size, seq_len, seq_len)
     return enc_padding_mask
 

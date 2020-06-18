@@ -19,18 +19,19 @@
     "drop_rate"        : 0.1
   },
   "training" : {
-    "batch_size"       : 128,
+    "batch_size"       : 256,
     "train_buffer_size": 999936,
-    "test_buffer_size" : 128,
+    "test_buffer_size" : 999936,
     "train_blocks"     : 14,
     "test_blocks"      : 1,
     "epochs"           : 10,
     "learning_rate"    : 2e-5
   },
   "execution": {
-    "train": true,
-    "infer": true,
-    "eager": false,
-    "debug": true
+    "gpu_mode": "-1",
+    "train"   : true,
+    "infer"   : true,
+    "eager"   : false,
+    "debug"   : true
   }
 }

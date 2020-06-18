@@ -42,13 +42,15 @@ class Configuration(object):
     learning_rate = None
 
     # execution
+    gpu_mode = None
     train = None
     infer = None
     eager = None
     debug = None
 
     # gpu
-    gpu_count = None
+    physical_gpu_count = None
+    logical_gpu_count = None
     b_p_gpu = None
 
     def __init__(self, configuration_file):
@@ -127,6 +129,8 @@ class Configuration(object):
         print("LEARNING_RATE = {}".format(self.learning_rate))
 
         # execution
+        self.gpu_mode = self.configuration["execution"]["gpu_mode"]
+        print("GPU_MODE = {}".format(self.gpu_mode))
         self.train = self.configuration["execution"]["train"]
         print("TRAIN = {}".format(self.train))
         self.infer = self.configuration["execution"]["infer"]
@@ -137,10 +141,22 @@ class Configuration(object):
         print("DEBUG = {}".format(self.debug))
 
         # gpu
+        try:
+            physical_gpus = tf.config.experimental.list_physical_devices('GPU')
+            self.physical_gpu_count = len(physical_gpus)
+            if self.gpu_mode.lstrip("-+").isdigit():
+                gpu_id = int(self.gpu_mode)
+                tf.config.experimental.set_visible_devices(physical_gpus[gpu_id], 'GPU')
+            logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+            self.logical_gpu_count = len(logical_gpus)
+            print("PHYSICAL_GPUS_COUNT = {0}".format(self.physical_gpu_count))
+            print("LOGICAL_GPUS_COUNT = {0}".format(self.logical_gpu_count))
+        except RuntimeError as e:
+            print(e)
+            exit()
+
         if self.eager:
             tf.config.experimental_run_functions_eagerly(True)
             tf.executing_eagerly()
-        self.gpu_count = len(tf.config.experimental.list_logical_devices('GPU'))
-        print("GPU_COUNT = {0}".format(self.gpu_count))
-        self.b_p_gpu = int(self.batch_size / self.gpu_count)
+        self.b_p_gpu = int(self.batch_size / self.logical_gpu_count)
         print("BATCHES_PRO_GPU = {0}".format(self.b_p_gpu))

@@ -291,7 +291,6 @@ def train_model():
         for e in range(c.epochs):
             start = time.time()
             tr_l1_acc, tr_a1_acc, tr_a2_acc, tr_step = 0, 0, 0, 0
-            va_l1_acc, va_a1_acc, va_a2_acc, va_step = 0, 0, 0, 0
 
             for b in range(c.train_blocks):
                 if c.train_blocks > 1:
@@ -300,9 +299,6 @@ def train_model():
                     if e <= 0:
                         tf_train_dataset = load_train_block(b)
 
-                if e <= 0 and b <= 0:
-                    tf_test_dataset = load_test_block(b)
-
                 for x, x_id, x_seg, y_mask, y_id, y_w, sp in tf_train_dataset:
                     l1, a1, a2 = distributed_train_step(x, x_id, x_seg, y_mask, y_id, y_w, sp)
                     tr_l1_acc, tr_a1_acc, tr_a2_acc, tr_step = tr_l1_acc + l1, tr_a1_acc + a1, tr_a2_acc + a2, tr_step + 1
@@ -310,12 +306,16 @@ def train_model():
                     percent = 1e2 * (tr_step / tr_steps)
                     printf("TRAIN STEP : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4} ", tr_step, percent, l1_mu, a1_mu, a2_mu)
 
-                for x, x_id, x_seg, y_mask, y_id, y_w, sp in tf_test_dataset:
-                    l1, a1, a2 = distributed_test_step(x, x_id, x_seg, y_mask, y_id, y_w, sp)
-                    va_l1_acc, va_a1_acc, va_a2_acc, va_step = va_l1_acc + l1, va_a1_acc + a1, va_a2_acc + a2, va_step + 1
-                    l1_mu, a1_mu, a2_mu = va_l1_acc / va_step, va_a1_acc / va_step, va_a2_acc / va_step
-                    percent = 1e2 * (va_step / va_steps)
-                    printf("TEST STEP : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4} ", va_step, percent, l1_mu, a1_mu, a2_mu)
+            if e <= 0:
+                tf_test_dataset = load_test_block(b)
+
+            va_l1_acc, va_a1_acc, va_a2_acc, va_step = 0, 0, 0, 0
+            for x, x_id, x_seg, y_mask, y_id, y_w, sp in tf_test_dataset:
+                l1, a1, a2 = distributed_test_step(x, x_id, x_seg, y_mask, y_id, y_w, sp)
+                va_l1_acc, va_a1_acc, va_a2_acc, va_step = va_l1_acc + l1, va_a1_acc + a1, va_a2_acc + a2, va_step + 1
+                l1_mu, a1_mu, a2_mu = va_l1_acc / va_step, va_a1_acc / va_step, va_a2_acc / va_step
+                percent = 1e2 * (va_step / va_steps)
+                printf("TEST STEP : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4} ", va_step, percent, l1_mu, a1_mu, a2_mu)
 
             tr_l1_acc, tr_a1_acc, tr_a2_acc = tr_l1_acc / tr_steps, tr_a1_acc / tr_steps, tr_a2_acc / tr_steps
             va_l1_acc, va_a1_acc, va_a2_acc = va_l1_acc / va_steps, va_a1_acc / va_steps, va_a2_acc / va_steps

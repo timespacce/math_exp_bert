@@ -2,3 +2,4 @@
 /checkpoints/
 /data/
 /validation/
+/__pycache__/

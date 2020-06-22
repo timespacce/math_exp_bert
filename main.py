@@ -307,9 +307,10 @@ def train_model():
                     printf("TRAIN STEP : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4} ", tr_step, percent, l1_mu, a1_mu, a2_mu)
 
             if e <= 0:
-                tf_test_dataset = load_test_block(b)
+                tf_test_dataset = load_test_block(0)
 
             va_l1_acc, va_a1_acc, va_a2_acc, va_step = 0, 0, 0, 0
+
             for x, x_id, x_seg, y_mask, y_id, y_w, sp in tf_test_dataset:
                 l1, a1, a2 = distributed_test_step(x, x_id, x_seg, y_mask, y_id, y_w, sp)
                 va_l1_acc, va_a1_acc, va_a2_acc, va_step = va_l1_acc + l1, va_a1_acc + a1, va_a2_acc + a2, va_step + 1

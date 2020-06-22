@@ -271,7 +271,7 @@ def train_model():
             else:
                 return loss, mask_accuracy, label_accuracy
 
-        template = 'E: {} ({:.2f}%) | Loss: [{:.4f}, {:.4f}] | Mask / Label Acc: [{:.4f}, {:.4f}, {:.4f}, {:.4f}] | delta = {:.2f} \n'
+        template = '\n E: {} ({:.2f}%) | Loss: [{:.4f}, {:.4f}] | Mask / Label Acc: [{:.4f}, {:.4f}, {:.4f}, {:.4f}] | delta = {:.2f} \n'
 
         def load_train_block(b_id):
             train_data = load_block(c.train_data_dir, b_id, c.train_buffer_size)
@@ -306,7 +306,6 @@ def train_model():
                     percent = 1e2 * (tr_step / tr_steps)
                     printf("TRAIN STEP : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4} ", tr_step, percent, l1_mu, a1_mu, a2_mu)
 
-            print("")
             if e <= 0:
                 tf_test_dataset = load_test_block(0)
 
@@ -317,9 +316,8 @@ def train_model():
                 va_l1_acc, va_a1_acc, va_a2_acc, va_step = va_l1_acc + l1, va_a1_acc + a1, va_a2_acc + a2, va_step + 1
                 l1_mu, a1_mu, a2_mu = va_l1_acc / va_step, va_a1_acc / va_step, va_a2_acc / va_step
                 percent = 1e2 * (va_step / va_steps)
-                printf("TEST STEP : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4} ", va_step, percent, l1_mu, a1_mu, a2_mu)
+                printf("\n TEST STEP : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4} ", va_step, percent, l1_mu, a1_mu, a2_mu)
 
-            print("")
             tr_l1_acc, tr_a1_acc, tr_a2_acc = tr_l1_acc / tr_steps, tr_a1_acc / tr_steps, tr_a2_acc / tr_steps
             va_l1_acc, va_a1_acc, va_a2_acc = va_l1_acc / va_steps, va_a1_acc / va_steps, va_a2_acc / va_steps
 

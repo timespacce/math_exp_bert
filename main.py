@@ -306,6 +306,7 @@ def train_model():
                     percent = 1e2 * (tr_step / tr_steps)
                     printf("TRAIN STEP : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4} ", tr_step, percent, l1_mu, a1_mu, a2_mu)
 
+            print("")
             if e <= 0:
                 tf_test_dataset = load_test_block(0)
 

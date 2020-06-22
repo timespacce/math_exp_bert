@@ -1,4 +1,4 @@
-{
+7{
   "data"     : {
     "checkpoint_folder"    : "checkpoints/formulas",
     "vocab_folder"         : "vocabs/sub_vocab_bert_file.txt",

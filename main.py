@@ -304,7 +304,7 @@ def train_model():
                     tr_l1_acc, tr_a1_acc, tr_a2_acc, tr_step = tr_l1_acc + l1, tr_a1_acc + a1, tr_a2_acc + a2, tr_step + 1
                     l1_mu, a1_mu, a2_mu = tr_l1_acc / tr_step, tr_a1_acc / tr_step, tr_a2_acc / tr_step
                     percent = 1e2 * (tr_step / tr_steps)
-                    printf("TRAIN STEP : {}\t({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4}\t", tr_step, percent, l1_mu, a1_mu, a2_mu)
+                    printf("TRA STEP : {}\t({:.3}%)\tL1 = {:.4}\tA1 = {:.4}\tA2 = {:.4}\t", tr_step, percent, l1_mu, a1_mu, a2_mu)
 
             if e <= 0:
                 tf_test_dataset = load_test_block(0)
@@ -316,7 +316,7 @@ def train_model():
                 va_l1_acc, va_a1_acc, va_a2_acc, va_step = va_l1_acc + l1, va_a1_acc + a1, va_a2_acc + a2, va_step + 1
                 l1_mu, a1_mu, a2_mu = va_l1_acc / va_step, va_a1_acc / va_step, va_a2_acc / va_step
                 percent = 1e2 * (va_step / va_steps)
-                printf("TEST STEP : {}\t({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4}\t", va_step, percent, l1_mu, a1_mu, a2_mu)
+                printf("VAL STEP : {}\t({:.3}%)\tL1 = {:.4}\tA1 = {:.4}\tA2 = {:.4}\t", va_step, percent, l1_mu, a1_mu, a2_mu)
 
             tr_l1_acc, tr_a1_acc, tr_a2_acc = tr_l1_acc / tr_steps, tr_a1_acc / tr_steps, tr_a2_acc / tr_steps
             va_l1_acc, va_a1_acc, va_a2_acc = va_l1_acc / va_steps, va_a1_acc / va_steps, va_a2_acc / va_steps

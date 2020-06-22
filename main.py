@@ -316,7 +316,7 @@ def train_model():
                 va_l1_acc, va_a1_acc, va_a2_acc, va_step = va_l1_acc + l1, va_a1_acc + a1, va_a2_acc + a2, va_step + 1
                 l1_mu, a1_mu, a2_mu = va_l1_acc / va_step, va_a1_acc / va_step, va_a2_acc / va_step
                 percent = 1e2 * (va_step / va_steps)
-                printf("\n TEST STEP : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4} ", va_step, percent, l1_mu, a1_mu, a2_mu)
+                printf("TEST STEP : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4} ", va_step, percent, l1_mu, a1_mu, a2_mu)
 
             tr_l1_acc, tr_a1_acc, tr_a2_acc = tr_l1_acc / tr_steps, tr_a1_acc / tr_steps, tr_a2_acc / tr_steps
             va_l1_acc, va_a1_acc, va_a2_acc = va_l1_acc / va_steps, va_a1_acc / va_steps, va_a2_acc / va_steps

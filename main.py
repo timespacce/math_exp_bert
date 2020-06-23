@@ -318,8 +318,8 @@ def train_model():
                 percent = 1e2 * (va_step / va_steps)
                 printf("VALIDATION : {}\t({:.3}%)\tL1 = {:.4}\tA1 = {:.4}\tA2 = {:.4}\t", va_step, percent, l1_mu, a1_mu, a2_mu)
 
-            tr_l1_acc, tr_a1_acc, tr_a2_acc = tr_l1_acc / tr_steps, tr_a1_acc / tr_steps, tr_a2_acc / tr_steps
-            va_l1_acc, va_a1_acc, va_a2_acc = va_l1_acc / va_steps, va_a1_acc / va_steps, va_a2_acc / va_steps
+            tr_l1_acc, tr_a1_acc, tr_a2_acc = tr_l1_acc / tr_step, tr_a1_acc / tr_step, tr_a2_acc / tr_step
+            va_l1_acc, va_a1_acc, va_a2_acc = va_l1_acc / va_step, va_a1_acc / va_step, va_a2_acc / va_step
 
             delta, percent = time.time() - start, (e / c.epochs) * 1e2
             printf(template.format(e, percent, tr_l1_acc, va_l1_acc, tr_a1_acc, tr_a2_acc, va_a1_acc, va_a2_acc, delta))

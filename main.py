@@ -381,15 +381,34 @@ def inference(dataset, validation_file, buffer_size, blocks):
 
         batch, sp_count, sp_acc, n_sp_count, n_sp_acc = 0, 1e-7, 0, 1e-7, 0
 
+        def inference_step(x, x_id, x_seg, y_mask, y_id, y_w, sp):
+            enc_padding_mask = create_mask(x_id)
+
+            with tf.GradientTape() as tape:
+                y_hat, y_sp = model(x, enc_padding_mask, x_seg, y_id)
+                loss = loss_function(y_mask, y_w, y_hat, sp, y_sp)
+                mask_accuracy, label_accuracy = accuracy_function(y_mask, y_w, y_hat, sp, y_sp)
+
+            return y_hat, y_sp, loss, mask_accuracy, label_accuracy
+
+        @tf.function
+        def distributed_train_step(x, x_id, x_seg, y_mask, y_id, y_w, sp):
+            y_hat, y_sp, loss, mask_accuracy, label_accuracy = strategy.run(inference_step, args=(x, x_id, x_seg, y_mask, y_id, y_w, sp))
+            if strategy.num_replicas_in_sync > 1:
+                return y_hat, \
+                       y_sp, \
+                       tf.reduce_sum(loss.values, axis=-1) / c.gpu_count, \
+                       tf.reduce_sum(mask_accuracy.values, axis=-1) / c.gpu_count, \
+                       tf.reduce_sum(label_accuracy.values, axis=-1) / c.gpu_count
+            else:
+                return y_hat, y_sp, loss, mask_accuracy, label_accuracy
+
         for b in range(blocks):
             train_dataset = load_block(dataset, b, buffer_size)
             train_dataset = strategy.experimental_distribute_dataset(train_dataset)
 
             for x, x_id, x_seg, y_mask, y_id, y_w, sp in train_dataset:
-                enc_padding_mask = create_mask(x_id)
-                y_hat, y_sp = model(x, enc_padding_mask, x_seg, y_id)
-                l1 = loss_function(y_mask, y_w, y_hat, sp, y_sp)
-                a1, a2 = accuracy_function(y_mask, y_w, y_hat, sp, y_sp)
+                y_hat, y_sp, l1, a1, a2 = distributed_train_step(x, x_id, x_seg, y_mask, y_id, y_w, sp)
                 l1_acc, a1_acc, a2_acc = l1_acc + l1, a1_acc + a1, a2_acc + a2
 
                 sp_c, match_sp, n_sp_c, match_n_sp = persist(batch, y_hat, y_sp, y_mask, sp, a1, a2)

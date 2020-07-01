@@ -392,7 +392,7 @@ def inference(dataset, validation_file, buffer_size, blocks):
             return y_hat, y_sp, loss, mask_accuracy, label_accuracy
 
         @tf.function
-        def distributed_train_step(x, x_id, x_seg, y_mask, y_id, y_w, sp):
+        def distributed_inference_step(x, x_id, x_seg, y_mask, y_id, y_w, sp):
             y_hat, y_sp, loss, mask_accuracy, label_accuracy = strategy.run(inference_step, args=(x, x_id, x_seg, y_mask, y_id, y_w, sp))
             if strategy.num_replicas_in_sync > 1:
                 return y_hat, \
@@ -408,7 +408,7 @@ def inference(dataset, validation_file, buffer_size, blocks):
             train_dataset = strategy.experimental_distribute_dataset(train_dataset)
 
             for x, x_id, x_seg, y_mask, y_id, y_w, sp in train_dataset:
-                y_hat, y_sp, l1, a1, a2 = distributed_train_step(x, x_id, x_seg, y_mask, y_id, y_w, sp)
+                y_hat, y_sp, l1, a1, a2 = distributed_inference_step(x, x_id, x_seg, y_mask, y_id, y_w, sp)
                 l1_acc, a1_acc, a2_acc = l1_acc + l1, a1_acc + a1, a2_acc + a2
 
                 sp_c, match_sp, n_sp_c, match_n_sp = persist(batch, y_hat, y_sp, y_mask, sp, a1, a2)

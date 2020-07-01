@@ -338,13 +338,16 @@ def inference(dataset, validation_file, buffer_size, blocks):
         return
 
     with strategy.scope():
-        l1_acc, a1_acc, a2_acc = 0, 0, 0
+        l1_acc, a1_acc, a2_acc, steps = 0, 0, 0, (buffer_size * blocks) // c.batch_size
 
         s = open(validation_file, mode='w', encoding='utf-8')
         row_format = "{0}\t{1}\t{2}\t{3}\n"
         batch_format = "{0}\t{1}\t{2}\n"
 
         def persist(batch, y_hat, y_sp, y_mask, sp, a1, a2):
+            if not c.debug:
+                return 0, 0, 0, 0
+
             y_mask_len = np.int32(y_w.numpy().sum(axis=1))
 
             y_hat_max = np.int32(tf.argmax(y_hat, axis=2).numpy())
@@ -409,15 +412,14 @@ def inference(dataset, validation_file, buffer_size, blocks):
 
             for x, x_id, x_seg, y_mask, y_id, y_w, sp in train_dataset:
                 y_hat, y_sp, l1, a1, a2 = distributed_inference_step(x, x_id, x_seg, y_mask, y_id, y_w, sp)
-                l1_acc, a1_acc, a2_acc = l1_acc + l1, a1_acc + a1, a2_acc + a2
+                l1_acc, a1_acc, a2_acc, batch = l1_acc + l1, a1_acc + a1, a2_acc + a2, batch + 1
+                l1_mu, a1_mu, a2_mu = l1_acc / batch, a1_acc / batch, a2_acc / batch
+                percent = 1e2 * (batch / steps)
 
                 sp_c, match_sp, n_sp_c, match_n_sp = persist(batch, y_hat, y_sp, y_mask, sp, a1, a2)
                 sp_count, n_sp_count = sp_count + sp_c, n_sp_count + n_sp_c,
                 sp_acc, n_sp_acc = sp_acc + match_sp, n_sp_acc + match_n_sp
 
-                batch += 1
-                l1_mu, a1_mu, a2_mu = l1_acc / batch, a1_acc / batch, a2_acc / batch
-                percent = 1e2 * (batch / batch)
                 printf("INFERENCE : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4} ", batch, percent, l1_mu, a1_mu, a2_mu)
 
         l1_acc, a1_acc, a2_acc = l1_acc / batch, a1_acc / batch, a2_acc / batch

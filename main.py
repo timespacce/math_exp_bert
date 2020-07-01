@@ -387,10 +387,9 @@ def inference(dataset, validation_file, buffer_size, blocks):
         def inference_step(x, x_id, x_seg, y_mask, y_id, y_w, sp):
             enc_padding_mask = create_mask(x_id)
 
-            with tf.GradientTape() as tape:
-                y_hat, y_sp = model(x, enc_padding_mask, x_seg, y_id, training=False)
-                loss = loss_function(y_mask, y_w, y_hat, sp, y_sp)
-                mask_accuracy, label_accuracy = accuracy_function(y_mask, y_w, y_hat, sp, y_sp)
+            y_hat, y_sp = model(x, enc_padding_mask, x_seg, y_id, training=False)
+            loss = loss_function(y_mask, y_w, y_hat, sp, y_sp)
+            mask_accuracy, label_accuracy = accuracy_function(y_mask, y_w, y_hat, sp, y_sp)
 
             return y_hat, y_sp, loss, mask_accuracy, label_accuracy
 

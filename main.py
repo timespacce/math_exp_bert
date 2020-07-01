@@ -337,77 +337,78 @@ def inference(dataset, validation_file, buffer_size, blocks):
     if not c.infer or buffer_size is 0:
         return
 
-    steps = buffer_size / c.batch_size
-    l1_acc, a1_acc, a2_acc = 0, 0, 0
+    with strategy.scope():
+        l1_acc, a1_acc, a2_acc = 0, 0, 0
 
-    s = open(validation_file, mode='w', encoding='utf-8')
-    row_format = "{0}\t{1}\t{2}\t{3}\n"
-    batch_format = "{0}\t{1}\t{2}\n"
+        s = open(validation_file, mode='w', encoding='utf-8')
+        row_format = "{0}\t{1}\t{2}\t{3}\n"
+        batch_format = "{0}\t{1}\t{2}\n"
 
-    def persist(batch, y_hat, y_sp, y_mask, sp, a1, a2):
-        y_mask_len = np.int32(y_w.numpy().sum(axis=1))
+        def persist(batch, y_hat, y_sp, y_mask, sp, a1, a2):
+            y_mask_len = np.int32(y_w.numpy().sum(axis=1))
 
-        y_hat_max = np.int32(tf.argmax(y_hat, axis=2).numpy())
-        y_sp_max = np.int32(tf.argmax(y_sp, axis=1).numpy())
-        y_mask_max = np.int32(y_mask.numpy())
-        sp_max = np.int32(sp.numpy())
+            y_hat_max = np.int32(tf.argmax(y_hat, axis=2).numpy())
+            y_sp_max = np.int32(tf.argmax(y_sp, axis=1).numpy())
+            y_mask_max = np.int32(y_mask.numpy())
+            sp_max = np.int32(sp.numpy())
 
-        mask_accuracy, label_accuracy = a1.numpy(), a2.numpy()
+            mask_accuracy, label_accuracy = a1.numpy(), a2.numpy()
 
-        sp_count, sp_acc, n_sp_count, n_sp_acc = 0, 0, 0, 0
+            sp_count, sp_acc, n_sp_count, n_sp_acc = 0, 0, 0, 0
 
-        for q in range(c.batch_size):
-            y_mask_len_q = y_mask_len[q]
-            y_hat_max_q = list(map(str, y_hat_max[q][:y_mask_len_q]))
-            y_mask_max_q = list(map(str, y_mask_max[q][:y_mask_len_q]))
-            y_hat_max_q = ' '.join(y_hat_max_q)
-            y_mask_max_q = ' '.join(y_mask_max_q)
-            y_sp_max_q = y_sp_max[q]
-            sp_max_q = sp_max[q]
+            for q in range(c.batch_size):
+                y_mask_len_q = y_mask_len[q]
+                y_hat_max_q = list(map(str, y_hat_max[q][:y_mask_len_q]))
+                y_mask_max_q = list(map(str, y_mask_max[q][:y_mask_len_q]))
+                y_hat_max_q = ' '.join(y_hat_max_q)
+                y_mask_max_q = ' '.join(y_mask_max_q)
+                y_sp_max_q = y_sp_max[q]
+                sp_max_q = sp_max[q]
 
-            row_content = row_format.format(y_hat_max_q, y_mask_max_q, y_sp_max_q, sp_max_q)
-            s.write(row_content)
+                row_content = row_format.format(y_hat_max_q, y_mask_max_q, y_sp_max_q, sp_max_q)
+                s.write(row_content)
 
-            match_sp, match_n_sp = sp_max_q == y_sp_max_q == 1, sp_max_q == y_sp_max_q == 0
-            sp_c, n_sp_c = sp_max_q == 1, sp_max_q == 0
+                match_sp, match_n_sp = sp_max_q == y_sp_max_q == 1, sp_max_q == y_sp_max_q == 0
+                sp_c, n_sp_c = sp_max_q == 1, sp_max_q == 0
 
-            sp_count, n_sp_count = sp_count + sp_c, n_sp_count + n_sp_c,
-            sp_acc, n_sp_acc = sp_acc + match_sp, n_sp_acc + match_n_sp
+                sp_count, n_sp_count = sp_count + sp_c, n_sp_count + n_sp_c,
+                sp_acc, n_sp_acc = sp_acc + match_sp, n_sp_acc + match_n_sp
 
-        batch_content = batch_format.format(batch, mask_accuracy, label_accuracy)
-        s.write(batch_content)
+            batch_content = batch_format.format(batch, mask_accuracy, label_accuracy)
+            s.write(batch_content)
 
-        return sp_count, sp_acc, n_sp_count, n_sp_acc
+            return sp_count, sp_acc, n_sp_count, n_sp_acc
 
-    batch, sp_count, sp_acc, n_sp_count, n_sp_acc = 0, 1e-7, 0, 1e-7, 0
+        batch, sp_count, sp_acc, n_sp_count, n_sp_acc = 0, 1e-7, 0, 1e-7, 0
 
-    for b in range(blocks):
-        train_dataset = load_block(dataset, b, buffer_size)
+        for b in range(blocks):
+            train_dataset = load_block(dataset, b, buffer_size)
+            train_dataset = strategy.experimental_distribute_dataset(train_dataset)
 
-        for x, x_id, x_seg, y_mask, y_id, y_w, sp in train_dataset:
-            enc_padding_mask = create_mask(x_id)
-            y_hat, y_sp = model(x, enc_padding_mask, x_seg, y_id)
-            l1 = loss_function(y_mask, y_w, y_hat, sp, y_sp)
-            a1, a2 = accuracy_function(y_mask, y_w, y_hat, sp, y_sp)
-            l1_acc, a1_acc, a2_acc = l1_acc + l1, a1_acc + a1, a2_acc + a2
+            for x, x_id, x_seg, y_mask, y_id, y_w, sp in train_dataset:
+                enc_padding_mask = create_mask(x_id)
+                y_hat, y_sp = model(x, enc_padding_mask, x_seg, y_id)
+                l1 = loss_function(y_mask, y_w, y_hat, sp, y_sp)
+                a1, a2 = accuracy_function(y_mask, y_w, y_hat, sp, y_sp)
+                l1_acc, a1_acc, a2_acc = l1_acc + l1, a1_acc + a1, a2_acc + a2
 
-            sp_c, match_sp, n_sp_c, match_n_sp = persist(batch, y_hat, y_sp, y_mask, sp, a1, a2)
-            sp_count, n_sp_count = sp_count + sp_c, n_sp_count + n_sp_c,
-            sp_acc, n_sp_acc = sp_acc + match_sp, n_sp_acc + match_n_sp
+                sp_c, match_sp, n_sp_c, match_n_sp = persist(batch, y_hat, y_sp, y_mask, sp, a1, a2)
+                sp_count, n_sp_count = sp_count + sp_c, n_sp_count + n_sp_c,
+                sp_acc, n_sp_acc = sp_acc + match_sp, n_sp_acc + match_n_sp
 
-            batch += 1
-            l1_mu, a1_mu, a2_mu = l1_acc / batch, a1_acc / batch, a2_acc / batch
-            percent = 1e2 * (batch / steps)
-            printf("INFERENCE : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4} ", batch, percent, l1_mu, a1_mu, a2_mu)
+                batch += 1
+                l1_mu, a1_mu, a2_mu = l1_acc / batch, a1_acc / batch, a2_acc / batch
+                percent = 1e2 * (batch / batch)
+                printf("INFERENCE : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4} ", batch, percent, l1_mu, a1_mu, a2_mu)
 
-    l1_acc, a1_acc, a2_acc = l1_acc / batch, a1_acc / batch, a2_acc / batch
+        l1_acc, a1_acc, a2_acc = l1_acc / batch, a1_acc / batch, a2_acc / batch
 
-    sp_rel, n_sp_rel = sp_acc / sp_count, n_sp_acc / n_sp_count
-    footer_format = "TEST : L1 = {:.4} : A1 / A2 = {:.4} {:.4} : SP / N_SP = {:.4} ({}) {:.4} ({}) of {:.4} {:.4}"
-    footer = footer_format.format(l1_acc, a1_acc, a2_acc, sp_rel, sp_acc, n_sp_rel, n_sp_acc, sp_count, n_sp_count)
-    s.write(footer)
-    print(footer)
-    s.close()
+        sp_rel, n_sp_rel = sp_acc / sp_count, n_sp_acc / n_sp_count
+        footer_format = "TEST : L1 = {:.4} : A1 / A2 = {:.4} {:.4} : SP / N_SP = {:.4} ({}) {:.4} ({}) of {:.4} {:.4}"
+        footer = footer_format.format(l1_acc, a1_acc, a2_acc, sp_rel, sp_acc, n_sp_rel, n_sp_acc, sp_count, n_sp_count)
+        s.write(footer)
+        print(footer)
+        s.close()
 
     return
 

@@ -59,10 +59,10 @@ def accuracy_function(y_mask, y_mask_w, y_hat_mask, y_sp, y_hat_sp):
 
     y_mask = tf.cast(y_mask, tf.float32)
     y_sp = tf.cast(y_sp, tf.float32)
-    mask_accuracy = tf.abs(tokens * y_mask_w - y_mask)
-    mask_accuracy = mask_accuracy / (mask_accuracy + 1e-15)
-    mask_accuracy = tf.reduce_sum(mask_accuracy, axis=1) / tf.reduce_sum(y_mask_w, axis=1)
-    mask_accuracy = 1 - tf.reduce_mean(mask_accuracy)
+    mask_error = tf.abs(tokens * y_mask_w - y_mask)
+    mask_error = mask_error / (mask_error + 1e-15)
+    mask_error = tf.reduce_sum(mask_error, axis=1) / tf.reduce_sum(y_mask_w, axis=1)
+    mask_accuracy = 1 - tf.reduce_mean(mask_error)
     sp_accuracy = 1 - tf.reduce_mean(tf.abs(same_paper - y_sp))
 
     return mask_accuracy, sp_accuracy
@@ -423,7 +423,7 @@ def inference(dataset, validation_file, buffer_size, blocks):
         l1_acc, a1_acc, a2_acc = l1_acc / batch, a1_acc / batch, a2_acc / batch
 
         sp_rel, n_sp_rel = sp_acc / sp_count, n_sp_acc / n_sp_count
-        footer_format = "TEST : L1 = {:.4} : A1 / A2 = {:.4} {:.4} : SP / N_SP = {:.4} ({}) {:.4} ({}) of {:.4} {:.4}"
+        footer_format = "\nTEST : L1 = {:.4} : A1 / A2 = {:.4} {:.4} : SP / N_SP = {:.4} ({}) {:.4} ({}) of {:.8} {:.8}"
         footer = footer_format.format(l1_acc, a1_acc, a2_acc, sp_rel, sp_acc, n_sp_rel, n_sp_acc, sp_count, n_sp_count)
         s.write(footer)
         print(footer)
@@ -443,7 +443,7 @@ def run_bert():
 
 
 if __name__ == "__main__":
-    a = time.time()
+    begin = time.time()
     run_bert()
-    b = (time.time() - a)
-    print("BERT NETWORK in {0} s".format(b))
+    runtime = (time.time() - begin)
+    print("BERT NETWORK in {0} s".format(runtime))

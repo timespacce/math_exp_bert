@@ -324,22 +324,20 @@ def train_model():
             delta, percent = time.time() - start, (e / c.epochs) * 1e2
             printf(template.format(e, percent, tr_l1_acc, va_l1_acc, tr_a1_acc, tr_a2_acc, va_a1_acc, va_a2_acc, delta))
 
-            if (e + 1) % 5 != 0:
-                continue
+            if (e + 1) % 5 == 0:
+                ckpt_save_path = ckpt_manager.save()
+                print('Saving checkpoint for epoch {} at {}'.format(e + 1, ckpt_save_path))
 
-            ckpt_save_path = ckpt_manager.save()
-            print('Saving checkpoint for epoch {} at {}'.format(e + 1, ckpt_save_path))
+    return
 
 
 def inference(dataset, validation_file, buffer_size, blocks):
-    global c, model, optimizer, ckpt_manager
+    global c, strategy, model, mask_loss, optimizer, ckpt_manager
 
     if not c.infer or buffer_size is 0:
         return
 
     with strategy.scope():
-        l1_acc, a1_acc, a2_acc, steps = 0, 0, 0, (buffer_size * blocks) // c.batch_size
-
         s = open(validation_file, mode='w', encoding='utf-8')
         row_format = "{0}\t{1}\t{2}\t{3}\n"
         batch_format = "{0}\t{1}\t{2}\n"
@@ -382,8 +380,6 @@ def inference(dataset, validation_file, buffer_size, blocks):
 
             return sp_count, sp_acc, n_sp_count, n_sp_acc
 
-        batch, sp_count, sp_acc, n_sp_count, n_sp_acc = 0, 1e-7, 0, 1e-7, 0
-
         def inference_step(x, x_id, x_seg, y_mask, y_id, y_w, sp):
             enc_padding_mask = create_mask(x_id)
 
@@ -404,6 +400,9 @@ def inference(dataset, validation_file, buffer_size, blocks):
                        tf.reduce_sum(label_accuracy.values, axis=-1) / c.gpu_count
             else:
                 return y_hat, y_sp, loss, mask_accuracy, label_accuracy
+
+        l1_acc, a1_acc, a2_acc, steps = 0, 0, 0, (buffer_size * blocks) // c.batch_size
+        batch, sp_count, sp_acc, n_sp_count, n_sp_acc = 0, 1e-7, 0, 1e-7, 0
 
         for b in range(blocks):
             train_dataset = load_block(dataset, b, buffer_size)

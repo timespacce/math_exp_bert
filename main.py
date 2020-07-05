@@ -451,7 +451,7 @@ def run_bert():
     load_configuration()
     build_model()
     train_model()
-    # inference(c.train_data_dir, c.train_validation_file, c.train_buffer_size, c.train_blocks)
+    inference(c.train_data_dir, c.train_validation_file, c.train_buffer_size, c.train_blocks)
     inference(c.test_data_dir, c.test_validation_file, c.test_buffer_size, c.test_blocks)
     return
 

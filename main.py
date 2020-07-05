@@ -212,6 +212,7 @@ def load_block(target, block_id, buffer_size):
     tf_sps = tf.data.Dataset.from_tensor_slices(sps)
 
     tf_dataset = tf.data.Dataset.zip((tf_xs, tf_xs_id, tf_xs_seg, tf_ys_mask, tf_ys_id, tf_ys_w, tf_sps))
+    tf_dataset = tf_dataset.shuffle(buffer_size=count, reshuffle_each_iteration=True)
     tf_dataset = tf_dataset.batch(batch_size=c.batch_size)
 
     runtime = time.time() - begin
@@ -229,47 +230,57 @@ def train_model():
 
     with strategy.scope():
 
-        def train_step(x, x_id, x_seg, y_mask, y_id, y_w, sp):
-            enc_padding_mask = create_mask(x_id)
+        @tf.function
+        def distributed_train_step(x, x_id, x_seg, y_mask, y_id, y_w, sp):
+            def per_gpu_train_step(x, x_id, x_seg, y_mask, y_id, y_w, sp):
+                enc_padding_mask = create_mask(x_id)
 
-            with tf.GradientTape() as tape:
+                with tf.GradientTape() as tape:
+                    y_hat_mask, y_hat_sp = model(x, enc_padding_mask, x_seg, y_id)
+                    loss = loss_function(y_mask, y_w, y_hat_mask, sp, y_hat_sp)
+                    mask_accuracy, label_accuracy = accuracy_function(y_mask, y_w, y_hat_mask, sp, y_hat_sp)
+
+                gradients = tape.gradient(loss, model.trainable_variables)
+                optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+
+                return loss, mask_accuracy, label_accuracy
+
+            l1, a1, a2 = strategy.run(per_gpu_train_step, args=(x, x_id, x_seg, y_mask, y_id, y_w, sp))
+
+            replicated = strategy.num_replicas_in_sync > 1
+
+            if not replicated:
+                return l1, a1, a2
+
+            acc_l1 = tf.reduce_sum(l1.values, axis=-1) / c.gpu_count
+            acc_a1 = tf.reduce_sum(a1.values, axis=-1) / c.gpu_count
+            acc_a2 = tf.reduce_sum(a2.values, axis=-1) / c.gpu_count
+
+            return acc_l1, acc_a1, acc_a2
+
+        @tf.function
+        def distributed_test_step(x, x_id, x_seg, y_mask, y_id, y_w, sp):
+            def per_gpu_test_step(x, x_id, x_seg, y_mask, y_id, y_w, sp):
+                enc_padding_mask = create_mask(x_id)
+
                 y_hat_mask, y_hat_sp = model(x, enc_padding_mask, x_seg, y_id)
                 loss = loss_function(y_mask, y_w, y_hat_mask, sp, y_hat_sp)
                 mask_accuracy, label_accuracy = accuracy_function(y_mask, y_w, y_hat_mask, sp, y_hat_sp)
 
-            gradients = tape.gradient(loss, model.trainable_variables)
-            optimizer.apply_gradients(zip(gradients, model.trainable_variables))
-
-            return loss, mask_accuracy, label_accuracy
-
-        def test_step(x, x_id, x_seg, y_mask, y_id, y_w, sp):
-            enc_padding_mask = create_mask(x_id)
-
-            y_hat_mask, y_hat_sp = model(x, enc_padding_mask, x_seg, y_id)
-            loss = loss_function(y_mask, y_w, y_hat_mask, sp, y_hat_sp)
-            mask_accuracy, label_accuracy = accuracy_function(y_mask, y_w, y_hat_mask, sp, y_hat_sp)
-
-            return loss, mask_accuracy, label_accuracy
-
-        @tf.function
-        def distributed_train_step(x, x_id, x_seg, y_mask, y_id, y_w, sp):
-            loss, mask_accuracy, label_accuracy = strategy.run(train_step, args=(x, x_id, x_seg, y_mask, y_id, y_w, sp))
-            if strategy.num_replicas_in_sync > 1:
-                return tf.reduce_sum(loss.values, axis=-1) / c.gpu_count, \
-                       tf.reduce_sum(mask_accuracy.values, axis=-1) / c.gpu_count, \
-                       tf.reduce_sum(label_accuracy.values, axis=-1) / c.gpu_count
-            else:
                 return loss, mask_accuracy, label_accuracy
 
-        @tf.function
-        def distributed_test_step(x, x_id, x_seg, y_mask, y_id, y_w, sp):
-            loss, mask_accuracy, label_accuracy = strategy.run(test_step, args=(x, x_id, x_seg, y_mask, y_id, y_w, sp))
-            if strategy.num_replicas_in_sync > 1:
-                return tf.reduce_sum(loss.values, axis=-1) / c.gpu_count, \
-                       tf.reduce_sum(mask_accuracy.values, axis=-1) / c.gpu_count, \
-                       tf.reduce_sum(label_accuracy.values, axis=-1) / c.gpu_count
-            else:
-                return loss, mask_accuracy, label_accuracy
+            l1, a1, a2 = strategy.run(per_gpu_test_step, args=(x, x_id, x_seg, y_mask, y_id, y_w, sp))
+
+            replicated = strategy.num_replicas_in_sync > 1
+
+            if not replicated:
+                return l1, a1, a2
+
+            acc_l1 = tf.reduce_sum(l1.values, axis=-1) / c.gpu_count
+            acc_a1 = tf.reduce_sum(a1.values, axis=-1) / c.gpu_count
+            acc_a2 = tf.reduce_sum(a2.values, axis=-1) / c.gpu_count
+
+            return acc_l1, acc_a1, acc_a2
 
         template = '\n E: {} ({:.2f}%) | Loss: [{:.4f}, {:.4f}] | Mask / Label Acc: [{:.4f}, {:.4f}, {:.4f}, {:.4f}] | delta = {:.2f} \n'
 
@@ -380,26 +391,29 @@ def inference(dataset, validation_file, buffer_size, blocks):
 
             return sp_count, sp_acc, n_sp_count, n_sp_acc
 
-        def inference_step(x, x_id, x_seg, y_mask, y_id, y_w, sp):
-            enc_padding_mask = create_mask(x_id)
-
-            y_hat, y_sp = model(x, enc_padding_mask, x_seg, y_id, training=False)
-            loss = loss_function(y_mask, y_w, y_hat, sp, y_sp)
-            mask_accuracy, label_accuracy = accuracy_function(y_mask, y_w, y_hat, sp, y_sp)
-
-            return y_hat, y_sp, loss, mask_accuracy, label_accuracy
-
         @tf.function
         def distributed_inference_step(x, x_id, x_seg, y_mask, y_id, y_w, sp):
-            y_hat, y_sp, loss, mask_accuracy, label_accuracy = strategy.run(inference_step, args=(x, x_id, x_seg, y_mask, y_id, y_w, sp))
-            if strategy.num_replicas_in_sync > 1:
-                return y_hat, \
-                       y_sp, \
-                       tf.reduce_sum(loss.values, axis=-1) / c.gpu_count, \
-                       tf.reduce_sum(mask_accuracy.values, axis=-1) / c.gpu_count, \
-                       tf.reduce_sum(label_accuracy.values, axis=-1) / c.gpu_count
-            else:
+            def inference_step(x, x_id, x_seg, y_mask, y_id, y_w, sp):
+                enc_padding_mask = create_mask(x_id)
+
+                y_hat, y_sp = model(x, enc_padding_mask, x_seg, y_id, training=False)
+                loss = loss_function(y_mask, y_w, y_hat, sp, y_sp)
+                mask_accuracy, label_accuracy = accuracy_function(y_mask, y_w, y_hat, sp, y_sp)
+
                 return y_hat, y_sp, loss, mask_accuracy, label_accuracy
+
+            y_hat, y_sp, l1, a1, a2 = strategy.run(inference_step, args=(x, x_id, x_seg, y_mask, y_id, y_w, sp))
+
+            replicated = strategy.num_replicas_in_sync > 1
+
+            if not replicated:
+                return y_hat, y_sp, l1, a1, a2
+
+            acc_l1 = tf.reduce_sum(l1.values, axis=-1) / c.gpu_count
+            acc_a1 = tf.reduce_sum(a1.values, axis=-1) / c.gpu_count
+            acc_a2 = tf.reduce_sum(a2.values, axis=-1) / c.gpu_count
+
+            return y_hat, y_sp, acc_l1, acc_a1, acc_a2
 
         l1_acc, a1_acc, a2_acc, steps = 0, 0, 0, (buffer_size * blocks) // c.batch_size
         batch, sp_count, sp_acc, n_sp_count, n_sp_acc = 0, 1e-7, 0, 1e-7, 0
@@ -437,7 +451,7 @@ def run_bert():
     load_configuration()
     build_model()
     train_model()
-    inference(c.train_data_dir, c.train_validation_file, c.train_buffer_size, c.train_blocks)
+    # inference(c.train_data_dir, c.train_validation_file, c.train_buffer_size, c.train_blocks)
     inference(c.test_data_dir, c.test_validation_file, c.test_buffer_size, c.test_blocks)
     return
 

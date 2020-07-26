@@ -1,0 +1,2050 @@
+{
+    "62daf678045f101cbf4bd45caf10e147f9443fc0": {
+        "token": "mrow{}",
+        "encoding": 0
+    },
+    "011ce6c916249649ef4c8ea1c075acdf67db4571": {
+        "token": "msub{}",
+        "encoding": 1
+    },
+    "56bcfcc05df9b918c2afe6bf744cb1e0d473ae96": {
+        "token": "mtd{}",
+        "encoding": 2
+    },
+    "a0a8b095c32f971096d0a0ddc164fabd2d771cfd": {
+        "token": "mo{'stretchy':'false'})",
+        "encoding": 3
+    },
+    "ecfde8e633aa9d2f761bd39b52c9cf49e483c5b7": {
+        "token": "mo{'stretchy':'false'}(",
+        "encoding": 4
+    },
+    "4eaf399885a2358edda4fcae5fea31e8514e6619": {
+        "token": "msup{}",
+        "encoding": 5
+    },
+    "d8f046a5d18d44e61b9a63f2d79d7f912d675d9a": {
+        "token": "mstyle{'scriptlevel':'0','displaystyle':'true'}",
+        "encoding": 6
+    },
+    "8c9768031b62d2513846c5fbf7da75e91d314a6a": {
+        "token": "mn{}2",
+        "encoding": 7
+    },
+    "7d7ec4acafd41f3717df64e6dffde623ff0c006a": {
+        "token": "mn{}1",
+        "encoding": 8
+    },
+    "7112d583d19a5a6e34664d1d2cfa38f5abd2211f": {
+        "token": "mo{'separator':'true'},",
+        "encoding": 9
+    },
+    "78fc0df76c710fa966e113c737d0aeff2a4dc435": {
+        "token": "mo{}\u2212",
+        "encoding": 10
+    },
+    "13200029e333ace009da088b98d3f91a373f905c": {
+        "token": "mtr{}",
+        "encoding": 11
+    },
+    "755f05721512ec2445fa2d277bad94c5fe4cfa63": {
+        "token": "mo{}=",
+        "encoding": 12
+    },
+    "366c2557b6074772cbb81f3127c360b21f1d9b48": {
+        "token": "mo{}+",
+        "encoding": 13
+    },
+    "9cba8d0a98d90fd3eccf8053905943240fb326dd": {
+        "token": "msubsup{}",
+        "encoding": 14
+    },
+    "2ef77cb52170a2aef70284e81bfa5efc072db965": {
+        "token": "span{'class':'katex'}",
+        "encoding": 15
+    },
+    "bb674f6c213686344188d3598db5a2fd8a84f649": {
+        "token": "math{}",
+        "encoding": 16
+    },
+    "fbc55d8b872a43d0ec8b5eb492071a0ef299f95a": {
+        "token": "semantics{}",
+        "encoding": 17
+    },
+    "11f6ffe5daaa481394b2e8c52cd04317620b2616": {
+        "token": "mfrac{}",
+        "encoding": 18
+    },
+    "bfc5bc885ac79729a1b736594989cf679244c567": {
+        "token": "mn{}0",
+        "encoding": 19
+    },
+    "2eee5e27263d07c6b9fd69f252bc4775470965d4": {
+        "token": "mi{}i",
+        "encoding": 20
+    },
+    "602a8d60f21046191730e69489f4dc1512122ca1": {
+        "token": "mi{}x",
+        "encoding": 21
+    },
+    "f4ede26070de9b0c2f113fad8b37f711e02310ae": {
+        "token": "mtable{'rowspacing':'0.24999999999999992em','columnalign':'right','columnspacing':''}",
+        "encoding": 22
+    },
+    "c20bdda1deff0c9732c7f89770a907b298ddfc74": {
+        "token": "mi{}n",
+        "encoding": 23
+    },
+    "ef27a56971f38672b56cdae388fc682c3564f574": {
+        "token": "mover{'accent':'true'}",
+        "encoding": 24
+    },
+    "fef843007d1a14b1bd158f974ed761c836d499a6": {
+        "token": "mi{}t",
+        "encoding": 25
+    },
+    "8b64e6117fa473864b96886add5fe94fa136bb00": {
+        "token": "mi{}k",
+        "encoding": 26
+    },
+    "6c387b104204155315ff3f2cc1c6c0949f7e28b5": {
+        "token": "mstyle{'scriptlevel':'0','displaystyle':'false'}",
+        "encoding": 27
+    },
+    "a3649483b636f7c9dfba574c9e229e6397eeb14b": {
+        "token": "mtext{}\u2009",
+        "encoding": 28
+    },
+    "590fb8ce5afa52469821ebc795594774e1d2350d": {
+        "token": "mi{'mathvariant':'normal'}\u2223",
+        "encoding": 29
+    },
+    "6c0a4f22f8804a2d027f0259c4c156553a358f7b": {
+        "token": "mi{'mathvariant':'normal'}.",
+        "encoding": 30
+    },
+    "9691462bfca2c4774e257b78265cbc6a87ea7235": {
+        "token": "mi{}d",
+        "encoding": 31
+    },
+    "6c64cfe0263c7bfd4afb425edbf2d073bf3d0fd6": {
+        "token": "mi{}j",
+        "encoding": 32
+    },
+    "70225f49ed834bf1f097ba16264cff17c58fcf86": {
+        "token": "mo{'fence':'true'})",
+        "encoding": 33
+    },
+    "a25524db79dee186fc95e64b16b7310b0976b612": {
+        "token": "mo{'fence':'true'}(",
+        "encoding": 34
+    },
+    "120e0eda7054be6ce4ab0b59ba291ac880c02115": {
+        "token": "mi{}a",
+        "encoding": 35
+    },
+    "bb8c5bf53c13a396bbbf38f37983943a69eed400": {
+        "token": "mi{}m",
+        "encoding": 36
+    },
+    "a3fc4737547294f5bdfb40b365d9fd5cd27d23e3": {
+        "token": "mi{}c",
+        "encoding": 37
+    },
+    "a65ade1cd0a34368cabc16021175ad6f272fd719": {
+        "token": "mi{}s",
+        "encoding": 38
+    },
+    "43de653da2eadc438d451e3e557b6dda2496ce79": {
+        "token": "mi{}p",
+        "encoding": 39
+    },
+    "1a7c8f77bdcd13fea1f9791d25a91de834fbb93b": {
+        "token": "mn{}3",
+        "encoding": 40
+    },
+    "fe349e2d9d21b623718d9a81a41d2df3cb003533": {
+        "token": "mi{}r",
+        "encoding": 41
+    },
+    "01f8bbbb072b51577fe3ad923098b2f8681398cd": {
+        "token": "mo{}\u2061",
+        "encoding": 42
+    },
+    "d1b20f65c2815a93f55cea59a046e022ee764221": {
+        "token": "mi{}\u03b1",
+        "encoding": 43
+    },
+    "f1da01c26cac92133b76008ad12e236fa766423b": {
+        "token": "mo{'mathvariant':'normal','lspace':'0em','rspace':'0em'}\u2032",
+        "encoding": 44
+    },
+    "bdd4902228a962bd7f947dea2294e2a5ddb5261e": {
+        "token": "mi{}u",
+        "encoding": 45
+    },
+    "6fba051f674221ae55f225111198647a299f5c17": {
+        "token": "mi{}e",
+        "encoding": 46
+    },
+    "c4dccffca06bb7c21483e00d6a29c33d25d18a2a": {
+        "token": "mi{}f",
+        "encoding": 47
+    },
+    "5fb84fcf35fdd6eaa7604ccda4009d214dd77d21": {
+        "token": "mi{}y",
+        "encoding": 48
+    },
+    "7c1a7d1b5584d21062c5137262d1469ab28f9e7a": {
+        "token": "mi{}z",
+        "encoding": 49
+    },
+    "90db1665f1e40188b44d0f09325cfa5145e19049": {
+        "token": "mi{}q",
+        "encoding": 50
+    },
+    "6a4804c6ec2961e6ad2d6596954c41c196fe2e90": {
+        "token": "mi{}\u03bb",
+        "encoding": 51
+    },
+    "a603a2aa69643a1447ce63e5caf705e05c2188b1": {
+        "token": "mn{}4",
+        "encoding": 52
+    },
+    "8719069049ac83ecf4f1df0f1f7c75837c701179": {
+        "token": "mi{}\u03bc",
+        "encoding": 53
+    },
+    "5eed630dd6114951a0525b5cea2aaa66c606f242": {
+        "token": "mi{}A",
+        "encoding": 54
+    },
+    "c2ba2bd4704dc4204a98690d69503b562ba80537": {
+        "token": "mi{}b",
+        "encoding": 55
+    },
+    "8dcd670345db1675e9026a069f9c773cdd88126c": {
+        "token": "mi{}T",
+        "encoding": 56
+    },
+    "288880bbea8219832d29bf0324a79a39c0c84f63": {
+        "token": "mo{}\u2211",
+        "encoding": 57
+    },
+    "851dbe4a46eb1014a0cce554470446173027473a": {
+        "token": "mi{}l",
+        "encoding": 58
+    },
+    "50f9e9aefcc069b4b02631a717601f0bf8bf4c01": {
+        "token": "mi{'mathvariant':'normal'}\u2202",
+        "encoding": 59
+    },
+    "0744c4e21975ac50b89fac8daf3f5cd10f8a8d17": {
+        "token": "mi{}N",
+        "encoding": 60
+    },
+    "5d06673daa37de0ff3b72ecb19a2faa1b01012df": {
+        "token": "mi{}g",
+        "encoding": 61
+    },
+    "b3eba48310835c267e0699d5093991d065a65e99": {
+        "token": "mi{}v",
+        "encoding": 62
+    },
+    "d3c22a6418d7530c4173814636c878328cd58683": {
+        "token": "mi{'mathvariant':'normal'}/",
+        "encoding": 63
+    },
+    "705df8fa098720ea2279d5ec77c8a577070e8327": {
+        "token": "mi{}L",
+        "encoding": 64
+    },
+    "2d9b86abff512cafe95833b446da350296250652": {
+        "token": "mo{}\u222b",
+        "encoding": 65
+    },
+    "4451005e9de1fb691aa520ba698a1452fc382e19": {
+        "token": "mtext{}\u00a0",
+        "encoding": 66
+    },
+    "2ab82e409f0640053a84af16ae01c5ecc1057442": {
+        "token": "mi{}\u03c0",
+        "encoding": 67
+    },
+    "e6fab60bd61d962bf0bed1df326f31636144e0a0": {
+        "token": "mi{}\u03c3",
+        "encoding": 68
+    },
+    "00e9f877e45d9bec9dcd9efb09f0cb3d692367ae": {
+        "token": "mi{}M",
+        "encoding": 69
+    },
+    "b8c17d08b360b2bde3f6743021a1b8e9721c2777": {
+        "token": "munder{}",
+        "encoding": 70
+    },
+    "0886cbd2f9dc5702d44989f4f8e5cb5daa0a6b9f": {
+        "token": "mi{}\u03b2",
+        "encoding": 71
+    },
+    "890398341c000277006e4ae96eee2b82c4ae2d40": {
+        "token": "mo{'stretchy':'false'}[",
+        "encoding": 72
+    },
+    "9ffb541a5e894849aaed30a60e5a0237eff02945": {
+        "token": "mi{}h",
+        "encoding": 73
+    },
+    "becccc5bbf2e99dc524c37953389bd33662373b1": {
+        "token": "mo{'stretchy':'false'}]",
+        "encoding": 74
+    },
+    "e43ad4ac4cd259a6ff00796c1d51434a2ae25059": {
+        "token": "mi{'mathvariant':'normal'}\u2225",
+        "encoding": 75
+    },
+    "8550b0264bde7fe6d29b15a6a9317f2b12830424": {
+        "token": "mo{}\u2264",
+        "encoding": 76
+    },
+    "739c2ea273ab1f4d94a0822a8c2f38ec5a88e5bb": {
+        "token": "mi{}X",
+        "encoding": 77
+    },
+    "0bae6069878cb8735b4066b20f27fce7f64683f0": {
+        "token": "mi{}R",
+        "encoding": 78
+    },
+    "db2937bd4a196574384c3c5725da53ddf50cd13d": {
+        "token": "mi{}\u03b4",
+        "encoding": 79
+    },
+    "4c9fe0e258665bf8ed99ff33ede70d9ffa236543": {
+        "token": "mi{}\u03c1",
+        "encoding": 80
+    },
+    "d25f7deb53d05c3273d3a339a93ab82ef3dfc52b": {
+        "token": "mi{}\u03b3",
+        "encoding": 81
+    },
+    "62d94fff067ecfe67f8112924738b6133695f2c6": {
+        "token": "mi{}B",
+        "encoding": 82
+    },
+    "0e5411d0b8bdb650ffba035da45ad87088e7a2d7": {
+        "token": "mi{}H",
+        "encoding": 83
+    },
+    "32967d03d21e170b122d89200bdb984ba6410117": {
+        "token": "mo{}\u2208",
+        "encoding": 84
+    },
+    "46c3dbd0e4de1320a8c051a035caf54e9f1e2875": {
+        "token": "mi{}S",
+        "encoding": 85
+    },
+    "febfb819e3ae3acc3188cd584f9f6026fa68b4e5": {
+        "token": "mi{}\u03c4",
+        "encoding": 86
+    },
+    "c1dfb0adeed5f0bea0760cdc807b1a22af5f9a47": {
+        "token": "mo{}^",
+        "encoding": 87
+    },
+    "a2694cbc15fbd8f9a1d78aa1f9c800f33488ec32": {
+        "token": "mtext{}\u2005\u200a",
+        "encoding": 88
+    },
+    "04c22fe23ac3f038f7661e3cd7be1fe6d74044b7": {
+        "token": "mi{}C",
+        "encoding": 89
+    },
+    "410af69fc8a29aaea6b11fd6befa35442b31072e": {
+        "token": "mi{}\u03c9",
+        "encoding": 90
+    },
+    "048ca01ca639194be847f74701935b80ca5944c7": {
+        "token": "mi{}E",
+        "encoding": 91
+    },
+    "2c47f02ea2a5a01fe358bd47c6684fc08718f8bc": {
+        "token": "mi{}\u03d5",
+        "encoding": 92
+    },
+    "0acbdf371bfeb81516c0806e72c7e982f69c7f06": {
+        "token": "mi{}D",
+        "encoding": 93
+    },
+    "2a73c54b7ae99e906bd54d5123b300aac57a3770": {
+        "token": "mi{}\u03b8",
+        "encoding": 94
+    },
+    "318b8703462a15adbaafb819440c92e79644f3aa": {
+        "token": "mi{}\u03bd",
+        "encoding": 95
+    },
+    "648668a1236e4b6be2811426c96ae75c2a51a757": {
+        "token": "mi{}F",
+        "encoding": 96
+    },
+    "02816a0c17fa6fab209eca8fad9d91cb4c199d99": {
+        "token": "msqrt{}",
+        "encoding": 97
+    },
+    "c28427ade332aae0e2b7b268af5e3bcc001442d0": {
+        "token": "mo{}~",
+        "encoding": 98
+    },
+    "e0dadba8cdb898666df1211a62549f656ddb31dd": {
+        "token": "mi{}P",
+        "encoding": 99
+    },
+    "1bf9928d922630b722e7f0ccff6e509f9df55b07": {
+        "token": "mspace{'width':'1em'}",
+        "encoding": 100
+    },
+    "47737ebef13abc6a55f68a0b0bc70ac42d8bf2c0": {
+        "token": "mi{}V",
+        "encoding": 101
+    },
+    "42e78005aecdd27567e5b3560385ddd2453da903": {
+        "token": "mo{}\u2217",
+        "encoding": 102
+    },
+    "cb9c01cdcd8bd3d1f044a06a534ac53529f6cd8c": {
+        "token": "munderover{}",
+        "encoding": 103
+    },
+    "b9d4d2655489e1e9d245945fae78826db9346185": {
+        "token": "mi{}I",
+        "encoding": 104
+    },
+    "9ea130f2d7c93cc053f731bf0e91135f1bf7abd0": {
+        "token": "mtext{}\u2009\u2063",
+        "encoding": 105
+    },
+    "32853cbd23ff0db66743cf1027943b6b67d2147a": {
+        "token": "mi{'mathvariant':'normal'}\u221e",
+        "encoding": 106
+    },
+    "4b3dc3749bfed2f89e2b6598f162287b07eb6faf": {
+        "token": "mi{}\u03f5",
+        "encoding": 107
+    },
+    "a7f27e0ccbb722d7d1b05af2cf98d43b25e4e954": {
+        "token": "mo{}\u02c9",
+        "encoding": 108
+    },
+    "5dc6880887e1333f67cb238cc37c4eed2821f5e2": {
+        "token": "mi{}w",
+        "encoding": 109
+    },
+    "29611a6e2c80ff5c5717af84fc987b80b6c1b6cd": {
+        "token": "mi{}\u03be",
+        "encoding": 110
+    },
+    "ee6abb74bfbaee019a44cffd0e228e3d0e6f2ef5": {
+        "token": "mi{}\u03b7",
+        "encoding": 111
+    },
+    "f315b687251eaa43a59ba866f260c372207117fa": {
+        "token": "mi{}K",
+        "encoding": 112
+    },
+    "d0cf757fb0a4e74d81d2faae399d60b267b97889": {
+        "token": "mo{'fence':'true'}[",
+        "encoding": 113
+    },
+    "d6686500586ab72d57c27761aaa2f6da4b26f413": {
+        "token": "mo{'fence':'true'}]",
+        "encoding": 114
+    },
+    "c95e772905966cf64039845055dd5da66d037282": {
+        "token": "mo{}\u22c5",
+        "encoding": 115
+    },
+    "b456bc18b7331b0d30018e37e03b67a0c3ef0986": {
+        "token": "mi{}G",
+        "encoding": 116
+    },
+    "ee133191d9c35a20136c9f1a060be76790af0e2f": {
+        "token": "mi{'mathvariant':'normal'}\u0394",
+        "encoding": 117
+    },
+    "73b34712c97875b1941a8bdd6d1b13f724c70fae": {
+        "token": "mi{}\u03c8",
+        "encoding": 118
+    },
+    "9ff1b418e68142abd5af62ed92f4d0b896dba77c": {
+        "token": "mo{'stretchy':'false'}\u27e9",
+        "encoding": 119
+    },
+    "868a0c76795e0e9dbec388dbc901770a0d928e03": {
+        "token": "mo{}:",
+        "encoding": 120
+    },
+    "878501ebc7bc68d379bb83ac9f3d3abdf948e718": {
+        "token": "mo{'stretchy':'true'}\u203e",
+        "encoding": 121
+    },
+    "9c5d116bcb499059e4a0d81cf42a6c46fbc06f7b": {
+        "token": "mi{}U",
+        "encoding": 122
+    },
+    "ed03f0354f7c62d59f1b48512c1a2c447117c3a8": {
+        "token": "mi{}J",
+        "encoding": 123
+    },
+    "6b21387eb64675dfe231b22139be9894adfa5bab": {
+        "token": "mi{}\u03b5",
+        "encoding": 124
+    },
+    "27bd17c2b68f5a25e1c9d7ce35f4086d181aeeb6": {
+        "token": "mo{'stretchy':'false'}}",
+        "encoding": 125
+    },
+    "11a8318c138a11165a4462bfbecff6abaacbbba9": {
+        "token": "mo{'stretchy':'false'}{",
+        "encoding": 126
+    },
+    "6691ccf079ef11dcdfa112a392cc9f2deaf3db59": {
+        "token": "mo{'separator':'true'};",
+        "encoding": 127
+    },
+    "81280fb0202c366626517a185b88978024158cc2": {
+        "token": "mo{}\u2192",
+        "encoding": 128
+    },
+    "15db9fab4e37bdb352303025d6718c7bc6ce31ad": {
+        "token": "mo{'fence':'true'}\u2223",
+        "encoding": 129
+    },
+    "1d987632bb160a50bfc6d914ad35504922727255": {
+        "token": "mtable{'rowspacing':'0.24999999999999992em','columnalign':'rightleft','columnspacing':'0em'}",
+        "encoding": 130
+    },
+    "971be911bc5e6e36f79ae796c6da875d57c1a2f3": {
+        "token": "mi{'mathvariant':'normal'}\u03a9",
+        "encoding": 131
+    },
+    "aecf946a5f41679068d811e5718ae68a5309986d": {
+        "token": "mi{}\u03c6",
+        "encoding": 132
+    },
+    "27ef336e63397d7fcf2fbaf8f56d1fcf40a6be59": {
+        "token": "mo{'mathvariant':'normal'}\u2032",
+        "encoding": 133
+    },
+    "353ea42938dd9c6122274f19dc8b343cf84e61b7": {
+        "token": "mi{}Q",
+        "encoding": 134
+    },
+    "2518d3eadaea08d28706ee8f18feeb25b2dad2dc": {
+        "token": "mo{'stretchy':'false'}\u27e8",
+        "encoding": 135
+    },
+    "2b51baf234aa44c4fda0dba8425c8a355b0ff540": {
+        "token": "mi{}W",
+        "encoding": 136
+    },
+    "4d3780416bb7021e423248396761fdcc1006796c": {
+        "token": "mtable{'rowspacing':'0.24999999999999992em','columnalign':'rightleftright','columnspacing':'0em1em'}",
+        "encoding": 137
+    },
+    "5b718cc20093ceb76e7d45e2f09bf1d09afaaba0": {
+        "token": "mi{}Y",
+        "encoding": 138
+    },
+    "5509a939414d841605bc1959d5fa5cb975e35819": {
+        "token": "mi{'mathvariant':'normal'}\u0393",
+        "encoding": 139
+    },
+    "e3e18f236152464269fee03c3999ef2345ccce75": {
+        "token": "mi{'mathvariant':'normal'}\u2207",
+        "encoding": 140
+    },
+    "e28d116bed6c2fbaf578c46a44c6f4241559f0cf": {
+        "token": "mi{'mathvariant':'normal'}\u2113",
+        "encoding": 141
+    },
+    "7a70ad11d21bab369136e49aa4e25f02eb9f3f36": {
+        "token": "mo{}\u20d7",
+        "encoding": 142
+    },
+    "22a42a62cb6aa378f933f505185a535412d8438f": {
+        "token": "mo{}<",
+        "encoding": 143
+    },
+    "f6aa6e3841a47f6d6a17c02806029decbc3fe6be": {
+        "token": "mo{}\u00d7",
+        "encoding": 144
+    },
+    "d0b57c4b86e08825d4f93b3d1f272cf5b96846b4": {
+        "token": "mi{'mathvariant':'normal'}d",
+        "encoding": 145
+    },
+    "0b37dbb7bd53c458b7bd43099e86239e2fc3015c": {
+        "token": "mspace{'width':'2em'}",
+        "encoding": 146
+    },
+    "c815c375183e9e1e84a007d99d18c3dcd36c5c86": {
+        "token": "mo{}\u2265",
+        "encoding": 147
+    },
+    "62c5dac191c77e104f76bcf1d0e1f550fb10095f": {
+        "token": "mi{}\u03ba",
+        "encoding": 148
+    },
+    "5050c2cc1dd985eeb1465e667980a0a78aa7bedd": {
+        "token": "mn{}5",
+        "encoding": 149
+    },
+    "b196f34e7051e1fd7a79dff12fd1340c93dfcd50": {
+        "token": "mi{}Z",
+        "encoding": 150
+    },
+    "faf7f6b4ba7b316192bbfe987275fc4c803573cd": {
+        "token": "mo{}\n                    ",
+        "encoding": 151
+    },
+    "a925b4a05506f9811cc57259516f836f6a77ad7f": {
+        "token": "mi{'mathvariant':'normal'}e",
+        "encoding": 152
+    },
+    "f4b406b6cb15131d2cc591e167d0bd7b293c4ddc": {
+        "token": "mo{}\u2026",
+        "encoding": 153
+    },
+    "e479bae930e4aa7a041b17fe6b28234a18ed612a": {
+        "token": "mi{}\u03c7",
+        "encoding": 154
+    },
+    "f5c26a174eaf48c019d95a119327697c42b9f2a3": {
+        "token": "mi{'mathvariant':'normal'}\u03a6",
+        "encoding": 155
+    },
+    "6725ed066c15b9a35e65d1731d5fb0374320f0d5": {
+        "token": "mo{'fence':'true'}{",
+        "encoding": 156
+    },
+    "59f5b4e7ac9d5eb09c2b6a4151659309d6eb48ff": {
+        "token": "mo{'fence':'false'}(",
+        "encoding": 157
+    },
+    "6395e9e193368c9917ef8d4be38b2036de529381": {
+        "token": "mo{'fence':'false'})",
+        "encoding": 158
+    },
+    "994c0bbc017b6e17254ca277b22c050ec16b8636": {
+        "token": "mn{}6",
+        "encoding": 159
+    },
+    "f7ea2667bf2c933fd01f6ea24367c0fe880a7e3b": {
+        "token": "mi{'mathvariant':'normal'}\u039b",
+        "encoding": 160
+    },
+    "2b6ebc8a3233c9bf941cdeff84d202dc25b07062": {
+        "token": "mo{}>",
+        "encoding": 161
+    },
+    "b089472c70e3ceb9ee1048687ac6868d3ab62b4a": {
+        "token": "mo{}\u2297",
+        "encoding": 162
+    },
+    "4fe9a40bb472156e9dadc6f903a0395f0f4bb2e3": {
+        "token": "mi{'mathvariant':'normal'}i",
+        "encoding": 163
+    },
+    "a1d603581bc39d740c679a02a4bf866b6249181f": {
+        "token": "mo{'stretchy':'true'}~",
+        "encoding": 164
+    },
+    "6b0f26f19f8b463fa1c0a1ff0ae6d94007bef576": {
+        "token": "mo{}\u02d9",
+        "encoding": 165
+    },
+    "0520a1a3871f9284d1ee8599ee3ffdaa7cae9d46": {
+        "token": "mi{'mathvariant':'double-struck'}R",
+        "encoding": 166
+    },
+    "2896ccc14edd3d44393f046347f20d097201437d": {
+        "token": "mi{}sin",
+        "encoding": 167
+    },
+    "9d82b7276534bcb31a55448d673386ecbd48343a": {
+        "token": "mi{}o",
+        "encoding": 168
+    },
+    "8fb3562f38e639a9d6ae2533a8570b36cd1462f4": {
+        "token": "mi{}cos",
+        "encoding": 169
+    },
+    "be5381d016c42d7ec4b50d90f18ebe88a71d9b24": {
+        "token": "mi{}log",
+        "encoding": 170
+    },
+    "c8af8ebcf4177ee71b8f3a4066b10f1535cd0de2": {
+        "token": "mi{}\u03b6",
+        "encoding": 171
+    },
+    "0698249600e3efb0cd62871bd8bb9c5958c186c8": {
+        "token": "mi{'mathvariant':'normal'}r",
+        "encoding": 172
+    },
+    "07de9ae6b51bc47e3021c1b8ae4ea86b1a331d72": {
+        "token": "mi{'mathvariant':'normal'}\u03a8",
+        "encoding": 173
+    },
+    "aa76195ea7fa62e478edf30160018504604d7638": {
+        "token": "mo{}\u22ef",
+        "encoding": 174
+    },
+    "d8c2f06493e9dec7153e6cf6450f7e06f872b33f": {
+        "token": "mn{}8",
+        "encoding": 175
+    },
+    "b95c2ecffce4c33a7c84bbfc96d2b73d67fbdabf": {
+        "token": "mi{'mathvariant':'normal'}o",
+        "encoding": 176
+    },
+    "13325532dd30c5365cda667438bfe420c683e5bf": {
+        "token": "mi{'mathvariant':'normal'}t",
+        "encoding": 177
+    },
+    "f01ee4d370a7cd7db53c1e197cb5ae7156a7430e": {
+        "token": "mi{}exp",
+        "encoding": 178
+    },
+    "499d428f3727a713a037ec78b9d8db3e5142c64e": {
+        "token": "mo{'fence':'true'}}",
+        "encoding": 179
+    },
+    "f37c687d6207eb4e0a6cb5340d982fb371ee1bb8": {
+        "token": "mi{'mathvariant':'bold'}x",
+        "encoding": 180
+    },
+    "3031c1ca9d972c7384b3d5b590e591c7e7e316d5": {
+        "token": "mi{'mathvariant':'normal'}s",
+        "encoding": 181
+    },
+    "b96ee582a27047cdc4b700aa628be542d042d7c7": {
+        "token": "mi{'mathvariant':'normal'}\u03a3",
+        "encoding": 182
+    },
+    "c2efa72c591ab1804ceb009dc1f4ad1bd11e4185": {
+        "token": "mn{}12",
+        "encoding": 183
+    },
+    "2edea5e39daa04a94f493e8cb3bc8d8b2a36a6a7": {
+        "token": "mtext{}\u2005",
+        "encoding": 184
+    },
+    "62eb25d62701f05cf399f330dd196bde88ad8410": {
+        "token": "mo{}\u00b1",
+        "encoding": 185
+    },
+    "15c1fca14169434646e55758565e117f2484a816": {
+        "token": "mo{'lspace':'0em','rspace':'0em'}\u2217",
+        "encoding": 186
+    },
+    "44a6207ad3de46546571b72e9d1e2fd786ee6c96": {
+        "token": "mi{'mathvariant':'normal'}a",
+        "encoding": 187
+    },
+    "460ee4838a07e787775f038fb0987b53733aac12": {
+        "token": "mi{}O",
+        "encoding": 188
+    },
+    "2ed0105ece5cf2c8b3fb67792cc232ec6cd0cce5": {
+        "token": "mo{'fence':'true'}\u2225",
+        "encoding": 189
+    },
+    "54599d2e2dc0069100aeada9eaa254ed99458589": {
+        "token": "mi{'mathvariant':'normal'}n",
+        "encoding": 190
+    },
+    "3ac870efa789db85f915bc019b1318a406a4e304": {
+        "token": "mi{'mathvariant':'normal'}m",
+        "encoding": 191
+    },
+    "c08f5ba1c34cdd007847402be652248d8a3e506f": {
+        "token": "mo{}\u2261",
+        "encoding": 192
+    },
+    "cefab364705f5261daafaed5acadcd320b1ffd4a": {
+        "token": "mi{'mathvariant':'bold'}r",
+        "encoding": 193
+    },
+    "f5c6712068540e884f4e615f95e90b7208985a9b": {
+        "token": "mo{'stretchy':'true'}^",
+        "encoding": 194
+    },
+    "7437f0ba7ddf0cce1e8233254d9dbe4f8e5a3c0f": {
+        "token": "mo{}\u220f",
+        "encoding": 195
+    },
+    "7cfe3160c70a4f117787795da9607f2f275ec962": {
+        "token": "mi{}ln",
+        "encoding": 196
+    },
+    "d6c29d25a0781741e78b1b09986ca5e223f17889": {
+        "token": "mi{'mathvariant':'script'}L",
+        "encoding": 197
+    },
+    "3416e2c1210965e1b04fce6880ad69aa6d365059": {
+        "token": "mi{'mathvariant':'bold'}k",
+        "encoding": 198
+    },
+    "ae89b808754a0c759f44776e95d3ddfdf68d38fa": {
+        "token": "mi{'mathvariant':'normal'}c",
+        "encoding": 199
+    },
+    "30ecaea5ccfc08b89b44ebd6741ea7f59d3ad06b": {
+        "token": "mi{'mathvariant':'normal'}f",
+        "encoding": 200
+    },
+    "27d46e795cf6c6daf0d2489c90b7c760df011e63": {
+        "token": "mo{}\u2227",
+        "encoding": 201
+    },
+    "cc581577997a82eb8144e875cf7989b9e0d2da5d": {
+        "token": "mover{}",
+        "encoding": 202
+    },
+    "9f05850fdfdfba6c8802c2081970c278f3a6aa45": {
+        "token": "mn{}0.",
+        "encoding": 203
+    },
+    "984253bcb8e048eecf4b68616ac6f5a6b63c663e": {
+        "token": "mi{'mathvariant':'script'}F",
+        "encoding": 204
+    },
+    "3297bb36b5d61d2a9ac41e56857a46ec45b12420": {
+        "token": "mo{}\u2218",
+        "encoding": 205
+    },
+    "038149565113a69c1d9f0a26aaa3f889aec29386": {
+        "token": "mo{'stretchy':'false'}!",
+        "encoding": 206
+    },
+    "7d0c2dae1fe58836b629d135686bffa62e6c195e": {
+        "token": "mi{'mathvariant':'script'}O",
+        "encoding": 207
+    },
+    "9e6aaa9a78c69e7546342bd9e7dec871c5eb09cd": {
+        "token": "mo{'lspace':'0em','rspace':'0em'}+",
+        "encoding": 208
+    },
+    "0604eb1c34b8977c48ed280b6117f079bd7ea91b": {
+        "token": "mo{'fence':'true'}\u27e9",
+        "encoding": 209
+    },
+    "20de2f03e0e9f09c06a43685e336658af54188d8": {
+        "token": "mo{}\u2229",
+        "encoding": 210
+    },
+    "940f296b2bc6a27d9da4733a205b14e5a60d0c0a": {
+        "token": "mi{'mathvariant':'double-struck'}E",
+        "encoding": 211
+    },
+    "1ea3b1ced269473bbbfe0f521102dad4176cb6d7": {
+        "token": "mi{}lim",
+        "encoding": 212
+    },
+    "aa2e757c35d31f97e1d92431cc60858c4d89e6ff": {
+        "token": "mo{}\n                      ",
+        "encoding": 213
+    },
+    "02eac9fb7010bb253f12239a449f1318747dc2cc": {
+        "token": "munder{'accentunder':'true'}",
+        "encoding": 214
+    },
+    "1136a1a98d42339dc3492beb6649fb694ebe91f7": {
+        "token": "mi{'mathvariant':'script'}H",
+        "encoding": 215
+    },
+    "404b01d8627da9d2c36d30c94b1bb627fdcf2328": {
+        "token": "mtable{'rowspacing':'0.15999999999999992em','columnspacing':'1em'}",
+        "encoding": 216
+    },
+    "a5574e278da9e24b216cc9b1ebde785eebcf2274": {
+        "token": "mstyle{'scriptlevel':'1','displaystyle':'false'}",
+        "encoding": 217
+    },
+    "c8e76e3503a0b190691734d06643117fead192e8": {
+        "token": "mi{'mathvariant':'normal'}\u03a0",
+        "encoding": 218
+    },
+    "84c453f779700b7672958690ecc3f45aed333556": {
+        "token": "mi{'mathvariant':'script'}A",
+        "encoding": 219
+    },
+    "184038aa8bcac82ef41b703692222f1809033ff9": {
+        "token": "mtext{}\u00a0\u00a0",
+        "encoding": 220
+    },
+    "5058c18fd2dad4bd38cce3482ba00184f37fdadb": {
+        "token": "mn{}7",
+        "encoding": 221
+    },
+    "fd415300fe44a06f6a8b476acade3f29e58dba5c": {
+        "token": "mn{}11",
+        "encoding": 222
+    },
+    "bfe86fb8f3f964feab45e375e3c6b0d2910b111c": {
+        "token": "mo{'fence':'false'}\u2223",
+        "encoding": 223
+    },
+    "b294085f777bb7f294f82c43bfa05cd6abc3b98b": {
+        "token": "mi{'mathvariant':'normal'}l",
+        "encoding": 224
+    },
+    "a0da1e7e487836f6fbdd3d52952741e8eeed9570": {
+        "token": "mpadded{'height':'+0em','voffset':'0em'}",
+        "encoding": 225
+    },
+    "319ec20547c5a88dc9e77cd0432bfc10a3304052": {
+        "token": "mi{'mathvariant':'normal'}\u210f",
+        "encoding": 226
+    },
+    "799e1f93527e9c43d66046f174c03d7956b63997": {
+        "token": "mi{'mathvariant':'script'}E",
+        "encoding": 227
+    },
+    "83a76f57892bd4e3cd933ee056f90adf8f5a1f63": {
+        "token": "mi{'mathvariant':'normal'}\u0398",
+        "encoding": 228
+    },
+    "587af3e932c0c84c73961a2342823d412d19be47": {
+        "token": "mi{}max",
+        "encoding": 229
+    },
+    "17947fc7384c0b1c4d2b23b0dcb416957e2fa6c3": {
+        "token": "mi{'mathvariant':'script'}M",
+        "encoding": 230
+    },
+    "0e8fb2c425a85c042befa3df602f745fb61bac17": {
+        "token": "mo{'mathvariant':'normal'}\u2260",
+        "encoding": 231
+    },
+    "646c09f4584df36c769a36a368dbfc293aab93c6": {
+        "token": "mo{}\u2020",
+        "encoding": 232
+    },
+    "8a4303ad58ab952b893ff0c3dfc1b82897043aaf": {
+        "token": "mi{'mathvariant':'normal'}\u2200",
+        "encoding": 233
+    },
+    "b44be8484018c8cbde583d88185f3b58c014575c": {
+        "token": "mi{'mathvariant':'double-struck'}Z",
+        "encoding": 234
+    },
+    "dad67ed90a101907b8bd57981ba2888fbc757f4c": {
+        "token": "mo{'lspace':'0em','rspace':'0em'}\u2212",
+        "encoding": 235
+    },
+    "4739445c34654bae6be61792098b1ca661e070cb": {
+        "token": "mo{}\u27f6",
+        "encoding": 236
+    },
+    "d201eaf00ec67c89318f3985d845b16df3a8364b": {
+        "token": "mi{'mathvariant':'double-struck'}P",
+        "encoding": 237
+    },
+    "444693412287927e7dc8bf6b941bd5a044941364": {
+        "token": "mi{'mathvariant':'normal'}p",
+        "encoding": 238
+    },
+    "24aa9051aeacd41b9615d0cf2c2311545f0ce0b6": {
+        "token": "mo{'fence':'false'}[",
+        "encoding": 239
+    },
+    "b4c4497c3ff73b5f6e81513052c25f9a930a9446": {
+        "token": "mo{'fence':'false'}]",
+        "encoding": 240
+    },
+    "3a48968764e4572c4d333f0e09e31e6176051692": {
+        "token": "mn{}10",
+        "encoding": 241
+    },
+    "3da15cdd6614f5a0acabdec0b6cd15b73f7ebf42": {
+        "token": "mo{}\u223c",
+        "encoding": 242
+    },
+    "1062382a31df713a3cb3444b2caa534fddeeda8f": {
+        "token": "mn{}9",
+        "encoding": 243
+    },
+    "940abea4fe104266add0ca9b62eddc8e8f460610": {
+        "token": "mo{'fence':'true'}\u27e8",
+        "encoding": 244
+    },
+    "67004c054aeab07bfcf92a8f33c76aac7550d97f": {
+        "token": "mi{'mathvariant':'normal'}I",
+        "encoding": 245
+    },
+    "e3cb40b27ca9335eecd7fc3fbfc5b94907df2f89": {
+        "token": "mi{}sup",
+        "encoding": 246
+    },
+    "d56cf1836414e2a41acb76979a33baa8d3121ae8": {
+        "token": "mo{'lspace':'0em','rspace':'0em'}\u2020",
+        "encoding": 247
+    },
+    "71eaee2c996306839ba2a4c8982e3f58c6fedb24": {
+        "token": "mo{}\u2223",
+        "encoding": 248
+    },
+    "285a46966cb9d096a4b581cad863e171dcc63b36": {
+        "token": "mi{'mathvariant':'script'}D",
+        "encoding": 249
+    },
+    "4e55b358f204fcbdd738ccd2ed3d7afbfeacf504": {
+        "token": "mi{'mathvariant':'script'}P",
+        "encoding": 250
+    },
+    "472898ac00356572d61bb2814795c845b0697bc9": {
+        "token": "mo{}\u2295",
+        "encoding": 251
+    },
+    "858db1a405f187fc9d0f558f60395160377fb710": {
+        "token": "mi{}min",
+        "encoding": 252
+    },
+    "237c16eef25e5895920570283db861b1c1e289d8": {
+        "token": "mi{'mathvariant':'script'}S",
+        "encoding": 253
+    },
+    "78cf21a0e4da23d11179923859f0f213c3661d5c": {
+        "token": "mi{'mathvariant':'bold'}p",
+        "encoding": 254
+    },
+    "a07214093fa200b3e74f760d1d75f15955a8c31a": {
+        "token": "mo{}\u2248",
+        "encoding": 255
+    },
+    "9e1076d40c382bdaa6e04a0730da78573778e021": {
+        "token": "mi{'mathvariant':'normal'}T",
+        "encoding": 256
+    },
+    "6c24422a861548e735b98d72efba361671cdbc42": {
+        "token": "mo{'stretchy':'false'}\u2223",
+        "encoding": 257
+    },
+    "5a28ad6bc0e51f5c334f2579def669cc67c057fa": {
+        "token": "mi{'mathvariant':'script'}C",
+        "encoding": 258
+    },
+    "b71891f25b2f87a22fa28b4b9f76ea1facd247bc": {
+        "token": "mi{'mathvariant':'bold'}v",
+        "encoding": 259
+    },
+    "49b5e3f4f3244479d23ef9afba6583e4e41b9513": {
+        "token": "mfrac{'linethickness':'0px'}",
+        "encoding": 260
+    },
+    "3725ebcbc06255f87802cd0a13732a6688c53c2a": {
+        "token": "mi{'mathvariant':'double-struck'}C",
+        "encoding": 261
+    },
+    "e25fc0375d8c6f21a2d28ddfb7a474fab345f306": {
+        "token": "mi{'mathvariant':'normal'}\u22ee",
+        "encoding": 262
+    },
+    "545aa31671bc6272df7a9ef144501145fd55948a": {
+        "token": "mspace{'mathbackground':'black','width':'0em','height':'1.5em'}",
+        "encoding": 263
+    },
+    "ff367413483b47d641214ce524f17c60a25dea64": {
+        "token": "mo{}\u2243",
+        "encoding": 264
+    },
+    "e515df4887fdebfc273a24e8ee854237026e8353": {
+        "token": "mi{'mathvariant':'script'}B",
+        "encoding": 265
+    },
+    "3b3c1d42c5ed50faf313b0640d9b48088e91279e": {
+        "token": "mi{'mathvariant':'normal'}S",
+        "encoding": 266
+    },
+    "83bfbe7188c06eebb635a8435ebd0abe86ae076f": {
+        "token": "mi{'mathvariant':'bold'}q",
+        "encoding": 267
+    },
+    "eb8bf451cb8f1a5d68e76a25ed848c29d3c636cd": {
+        "token": "mi{'mathvariant':'bold'}u",
+        "encoding": 268
+    },
+    "78c7fb5ec439958d78f7365fa6cb344636241035": {
+        "token": "mn{}16",
+        "encoding": 269
+    },
+    "b20e50153b5a67e80a052c005ec65b66fcdb2ed7": {
+        "token": "mo{}\n                  ",
+        "encoding": 270
+    },
+    "f8757cd36c7a65581f3e50fb085c13e17256957c": {
+        "token": "mn{}13",
+        "encoding": 271
+    },
+    "02ca590f0fbd51b32ae60181aefb980fd88ea6be": {
+        "token": "mtext{}if\u00a0",
+        "encoding": 272
+    },
+    "0121708e54b52a301f20e1f61cc6e702ba3bfc68": {
+        "token": "mo{}\u222a",
+        "encoding": 273
+    },
+    "19b4354bb3fcd96fc4c6f1304c44a149ed6917c9": {
+        "token": "mstyle{'displaystyle':'false','scriptlevel':'0'}",
+        "encoding": 274
+    },
+    "733fd34fd3e5113d8fae2a2c1b71972d7738a14e": {
+        "token": "mi{'mathvariant':'normal'}\u2020",
+        "encoding": 275
+    },
+    "95c157c433ef0507293766a8890564deab0aa886": {
+        "token": "mo{}\n                        ",
+        "encoding": 276
+    },
+    "006f4970a8f1b8b3b9a8fa4dcc4f97392bf7f397": {
+        "token": "mi{'mathvariant':'script'}T",
+        "encoding": 277
+    },
+    "3cde9ea3236825b568296c444d73273a050b3246": {
+        "token": "mi{'mathvariant':'script'}R",
+        "encoding": 278
+    },
+    "4cfae70bc317256c6df75d87951476cf4a5375b2": {
+        "token": "mo{}\u2282",
+        "encoding": 279
+    },
+    "35a580cb17c58c78107abcb988e6841a2166c0d4": {
+        "token": "mi{'mathvariant':'normal'}H",
+        "encoding": 280
+    },
+    "321f9dba9e55bd6ba56e30b9797769f152e00db4": {
+        "token": "mi{'mathvariant':'bold'}A",
+        "encoding": 281
+    },
+    "520bff8836882921a2573cccd8f5ceea0fe4b73d": {
+        "token": "mphantom{}",
+        "encoding": 282
+    },
+    "57e9696b4fef106da4d00ad19b5c7859ec75a43a": {
+        "token": "mo{'lspace':'0em','rspace':'0em'}=",
+        "encoding": 283
+    },
+    "21527dd73fd6dd9a2ac48000f8bce6c830a7633d": {
+        "token": "mi{'mathvariant':'script'}J",
+        "encoding": 284
+    },
+    "ca6ae38835d1754fb889462a83bebe12aa306f46": {
+        "token": "mi{'mathvariant':'normal'}g",
+        "encoding": 285
+    },
+    "3c92d331f1e8cddb25b8475999ea54b63c7e8d5b": {
+        "token": "mi{'mathvariant':'script'}I",
+        "encoding": 286
+    },
+    "d7afe71ede228f1b2a2c7f1e19491af1362fdb7e": {
+        "token": "mn{'mathvariant':'bold'}1",
+        "encoding": 287
+    },
+    "003f38f7f5b8ad944961f48922daee45371dff49": {
+        "token": "mi{'mathvariant':'normal'}x",
+        "encoding": 288
+    },
+    "be5873a593a77a501e24d8ab6a619ec38dcd137a": {
+        "token": "mo{}\u2216",
+        "encoding": 289
+    },
+    "94a70bbf5400c09c72a54bb4cdf2dc17869158e4": {
+        "token": "mi{'mathvariant':'normal'}h",
+        "encoding": 290
+    },
+    "8fd66f163d366445f215c24e24aea5fdbfefcd61": {
+        "token": "mn{}22",
+        "encoding": 291
+    },
+    "44c76206ebb14181dbc70122a4f96521a22d7bae": {
+        "token": "mi{'mathvariant':'normal'}v",
+        "encoding": 292
+    },
+    "609a2e00e816ef6d818412fa907bb679cb17f7ce": {
+        "token": "mo{}\n            ",
+        "encoding": 293
+    },
+    "6c281d8a188c7d776e2db4583d6ee0135701870b": {
+        "token": "mn{}21",
+        "encoding": 294
+    },
+    "8abcc9a89b45f7e6277bdddc8a0501195900084a": {
+        "token": "mi{'mathvariant':'bold'}R",
+        "encoding": 295
+    },
+    "ab3f9c087adb979e755db6ad725083a1a178c1ed": {
+        "token": "mi{'mathvariant':'normal'}R",
+        "encoding": 296
+    },
+    "099206d29a9e537acaf2b2e5bcd33e047530250e": {
+        "token": "mtable{'rowspacing':'0.15999999999999992em','columnalign':'center','columnspacing':'1em'}",
+        "encoding": 297
+    },
+    "4279dbc44cd516d06cec381607221617bad2dd12": {
+        "token": "mtable{'rowspacing':'0.3599999999999999em','columnalign':'leftleft','columnspacing':'1em'}",
+        "encoding": 298
+    },
+    "3c2bdab330bf2aa9401b3363860e7e18ac483051": {
+        "token": "mi{'mathvariant':'script'}G",
+        "encoding": 299
+    },
+    "2bfc6f6a94590fdd391a38773c960482661ced6b": {
+        "token": "mi{'mathvariant':'bold-italic'}k",
+        "encoding": 300
+    },
+    "e2bbabb07a70b14179fbd99a1f6d99f5a25e9c8c": {
+        "token": "mi{'mathvariant':'script'}N",
+        "encoding": 301
+    },
+    "446a1055ae7e98283b95ffff0e1afd24219ed153": {
+        "token": "mtable{'rowspacing':'0.15999999999999992em','columnalign':'centercenter','columnspacing':'1em'}",
+        "encoding": 302
+    },
+    "aaaf8f6d93e744b3d020774d7c42bdc5378b60b6": {
+        "token": "mo{'fence':'false'}{",
+        "encoding": 303
+    },
+    "e2950915c33de38ab255c5453f342cf50924ea5a": {
+        "token": "mo{}\u2272",
+        "encoding": 304
+    },
+    "b8b8265884ac1a27fcf32107e4b01e79f7b8872c": {
+        "token": "mo{'fence':'false'}}",
+        "encoding": 305
+    },
+    "0e766cda467cf83ef745042e6823e369ddea1d45": {
+        "token": "mi{'mathvariant':'normal'}u",
+        "encoding": 306
+    },
+    "9d4e23cd4b88a83674fd2b1a6b22df1914b8f2dc": {
+        "token": "mi{'mathvariant':'normal'}B",
+        "encoding": 307
+    },
+    "814a029b681d7dd10d540800c28ccf574e0d659f": {
+        "token": "mn{}1.",
+        "encoding": 308
+    },
+    "4292d29887992a2eff5b8648f4f6d79421a8b3fb": {
+        "token": "mn{}23",
+        "encoding": 309
+    },
+    "aae29ec9cee8ac2584c36238858da41f258d25e1": {
+        "token": "mi{'mathvariant':'normal'}L",
+        "encoding": 310
+    },
+    "32f1cb7bae7f954a49b79519d534ae2581415d1b": {
+        "token": "mi{'mathvariant':'bold'}y",
+        "encoding": 311
+    },
+    "8ddfa2818b0282f415826280ffeb8cc5a3c89bed": {
+        "token": "mi{'mathvariant':'script'}K",
+        "encoding": 312
+    },
+    "8ef7296d24d5ff37342f653bbf141b9dc4bbbf81": {
+        "token": "mi{'mathvariant':'bold-italic'}x",
+        "encoding": 313
+    },
+    "75f3e77d2dc61f49fef1948dc6a7c0bb05a106a7": {
+        "token": "mo{}\u22a5",
+        "encoding": 314
+    },
+    "34f6c748213e2740717b517cc4d02b3ae49353b9": {
+        "token": "mtext{}\u00a0and\u00a0",
+        "encoding": 315
+    },
+    "7ea1aefdbcf3fc301ebe514c2c5d9c0b827156ae": {
+        "token": "mo{'lspace':'0em','rspace':'0em'}\u00b1",
+        "encoding": 316
+    },
+    "e83789c37b5bc5fc8464b8b60595755356c1e416": {
+        "token": "mi{'mathvariant':'script'}V",
+        "encoding": 317
+    },
+    "80ea0f10bfd1aab70cced65740abe8d68e6d3cde": {
+        "token": "mo{'stretchy':'false'}\u2225",
+        "encoding": 318
+    },
+    "280c615f07bf72ecb742bff5adb6bb8ae7dd5e9a": {
+        "token": "mo{}\u21a6",
+        "encoding": 319
+    },
+    "df60481409b9277728736745cef748c08684c931": {
+        "token": "mi{'mathvariant':'normal'}C",
+        "encoding": 320
+    },
+    "2a185977f4ef56d6080655d95db1f2abf2500346": {
+        "token": "mtext{}and",
+        "encoding": 321
+    },
+    "7fd4691b4e51acf3e709221bd172de792d85b000": {
+        "token": "mi{'mathvariant':'script'}U",
+        "encoding": 322
+    },
+    "8b0dab7f7d096303d8774ab991836a582870a814": {
+        "token": "mi{'mathvariant':'bold'}H",
+        "encoding": 323
+    },
+    "5bf8aa72db29af8167a32310e51f9d82a5a4737f": {
+        "token": "mi{'mathvariant':'normal'}M",
+        "encoding": 324
+    },
+    "008f4f66937b1fd8519ca0c71e944eb27bccc2d5": {
+        "token": "mo{}\u2245",
+        "encoding": 325
+    },
+    "06ba49d08cba94562901bef80a4f268a6f4839dd": {
+        "token": "mi{'mathvariant':'normal'}b",
+        "encoding": 326
+    },
+    "fd912ebd0b1701d9797c0a41a1b471a1e28741fa": {
+        "token": "mtext{}\u00a0\u00a0\u00a0",
+        "encoding": 327
+    },
+    "3f861cad15f83a9f876615396a41478551fd7c90": {
+        "token": "mspace{}",
+        "encoding": 328
+    },
+    "53bf2a628b67ba7eda7481843c9622369b310f60": {
+        "token": "mo{}\u2a7d",
+        "encoding": 329
+    },
+    "b36511a9cab09b553f3083f9d11f727d0c3e79d8": {
+        "token": "mo{}\u02c7",
+        "encoding": 330
+    },
+    "e3e42785fa4d8e2575308cd54e578139b796b34a": {
+        "token": "mi{'mathvariant':'normal'}D",
+        "encoding": 331
+    },
+    "e5961fafdf1c8352061f810b4a4ae30ff11693da": {
+        "token": "mtext{}d",
+        "encoding": 332
+    },
+    "c35230d2b437e336af3ab7b443bbbe694e46679b": {
+        "token": "mstyle{'scriptlevel':'2','displaystyle':'false'}",
+        "encoding": 333
+    },
+    "36dbe379d035037bcf1e504f9826a0c3150a3a40": {
+        "token": "mi{'mathvariant':'bold'}n",
+        "encoding": 334
+    },
+    "dc822e5b638cb1b3b2f2d745c06a1d11eace9920": {
+        "token": "mstyle{'scriptlevel':'1'}",
+        "encoding": 335
+    },
+    "fcc45ad846d11c32233a83adb9eb4bfafaa9b3ca": {
+        "token": "mi{'mathvariant':'script'}Q",
+        "encoding": 336
+    },
+    "e418b5fe267b369ac90e9cb5bfc4b9b26f1a0875": {
+        "token": "mi{}\n                  ",
+        "encoding": 337
+    },
+    "bb5e8a8db07f9a403de1b3a32a26640820ce0d85": {
+        "token": "mi{}det",
+        "encoding": 338
+    },
+    "fe7b9738e1deb7a525f4ac221c0a5e3b55cdef94": {
+        "token": "mn{}20",
+        "encoding": 339
+    },
+    "64ca625c02a79bad529ecbe689a0991c95f4543e": {
+        "token": "mo{}\u2193",
+        "encoding": 340
+    },
+    "d054157372e0b69057dcd2541bd4e9db5262a91d": {
+        "token": "mi{'mathvariant':'bold'}e",
+        "encoding": 341
+    },
+    "fea9fc7216bce03a3be1d3453db90a7fc2ae26f6": {
+        "token": "mtable{'rowspacing':'0.15999999999999992em','columnalign':'leftleft','columnspacing':'1em'}",
+        "encoding": 342
+    },
+    "2a3fbd31a3996175136596f88ed42b18733f3f33": {
+        "token": "mi{'mathvariant':'double-struck'}T",
+        "encoding": 343
+    },
+    "a845b94caad675648ecb097c8596a67a1f3acb58": {
+        "token": "mi{'mathvariant':'bold'}P",
+        "encoding": 344
+    },
+    "e8f649024ea7512d54edc783b5dda2582bac5578": {
+        "token": "mi{'mathvariant':'normal'}V",
+        "encoding": 345
+    },
+    "4d69dd81de683a25815d68c59effb4669ec9f821": {
+        "token": "mo{'lspace':'0em','rspace':'0em'}\u22ef",
+        "encoding": 346
+    },
+    "2418945acccd46a00bfb79ae977e2b39741d6351": {
+        "token": "mi{'mathvariant':'script'}X",
+        "encoding": 347
+    },
+    "1b87992044b1cf3d53e354633eeb7557c0118599": {
+        "token": "mi{'mathvariant':'normal'}E",
+        "encoding": 348
+    },
+    "a6c7438f786fb7307598aab573b2af99c5141d51": {
+        "token": "mi{'mathvariant':'double-struck'}N",
+        "encoding": 349
+    },
+    "2c025a0a21ef5663585be69042721aabf7c5a100": {
+        "token": "mi{}\u03f1",
+        "encoding": 350
+    },
+    "f320744b06dd76103575dc6ca43660220c817804": {
+        "token": "mi{'mathvariant':'normal'}P",
+        "encoding": 351
+    },
+    "596954aef702a873ef0344f183a9ff018cdcf9f6": {
+        "token": "mi{}\u03d1",
+        "encoding": 352
+    },
+    "c41bfbe2c20ce765f672aa80b2cc5d494c8c7e45": {
+        "token": "mi{'mathvariant':'normal'}A",
+        "encoding": 353
+    },
+    "33aa1dc1a0f78b28c176e1bc3e4649a30032d49e": {
+        "token": "mtext{}\u00a0if\u00a0",
+        "encoding": 354
+    },
+    "907ea9f4bfb2daa95cfe0728574d1ceae2902ee0": {
+        "token": "mn{'mathvariant':'bold'}0",
+        "encoding": 355
+    },
+    "e2925af9b58fdd1dd3bd1a38c131eec1594d485c": {
+        "token": "mi{}sinh",
+        "encoding": 356
+    },
+    "5a1828208f43642399d9f0111542dd7fd88044f9": {
+        "token": "mi{}inf",
+        "encoding": 357
+    },
+    "16867c5f2d55ab69ae5b585fcfeda065bb5f83e7": {
+        "token": "mi{'mathvariant':'double-struck'}Q",
+        "encoding": 358
+    },
+    "53e51627ac820ab650326e664a87f6941a234b3f": {
+        "token": "mi{'mathvariant':'bold'}E",
+        "encoding": 359
+    },
+    "a62e4a105ac68377f40ca38a72e23d33a74ca80e": {
+        "token": "mn{}24",
+        "encoding": 360
+    },
+    "d5f10d24a01ac6c48aa4cc02bcb745dd5d4672cc": {
+        "token": "mspace{'mathbackground':'black','width':'0em','height':'0em'}",
+        "encoding": 361
+    },
+    "59b3e0a8090e59a18caa93f667bf1b9d9c89f5cb": {
+        "token": "mo{}\u22c6",
+        "encoding": 362
+    },
+    "8468335c1a502a07346b8526400234f08af6f09b": {
+        "token": "mo{'stretchy':'true'}\u2192",
+        "encoding": 363
+    },
+    "80f06347ce68b3bcde82acb0912124a1bdc49875": {
+        "token": "mo{}\u2191",
+        "encoding": 364
+    },
+    "4486ae9b62899a126ddb6bfeff0330955d277a28": {
+        "token": "mi{}\n                            ",
+        "encoding": 365
+    },
+    "6feffbf58279197b580b4e92341598e0923a4e9e": {
+        "token": "mi{}cosh",
+        "encoding": 366
+    },
+    "22b6d5b25788794c8680f4e592d73ce81efd0d75": {
+        "token": "mspace{'width':'0.3333333333333333em'}",
+        "encoding": 367
+    },
+    "d6517b7c7c2e2d7a7975f2b1c4fc10d7b0341222": {
+        "token": "mtable{'rowspacing':'0.15999999999999992em','columnalign':'left','columnspacing':'1em'}",
+        "encoding": 368
+    },
+    "d1f6bfaa315db6814142c3521e9314ac4072b4d2": {
+        "token": "mo{}\u2286",
+        "encoding": 369
+    },
+    "b0aaffcf2516d75017e0c87191aabc10ac6e2dcb": {
+        "token": "mi{'mathvariant':'script'}W",
+        "encoding": 370
+    },
+    "197c4651902d7541d038dec356247ce6062c7de9": {
+        "token": "mi{'mathvariant':'bold'}Y",
+        "encoding": 371
+    },
+    "e02d8333d278e3e27b957edf76af06329a6fcaf5": {
+        "token": "mi{'mathvariant':'normal'}#",
+        "encoding": 372
+    },
+    "628bdd2df7338645dfae764911d0e1ece37da961": {
+        "token": "mo{}\u226a",
+        "encoding": 373
+    },
+    "c51fada9048add07e6b48e6a49942f7102cbdd63": {
+        "token": "mn{}15",
+        "encoding": 374
+    },
+    "d44719fb021375d1ccf7cea6804a2cb46b82cc7f": {
+        "token": "mn{}32",
+        "encoding": 375
+    },
+    "84fa33614b533e44035b6a6bebbf6718933562b0": {
+        "token": "mo{'lspace':'0em','rspace':'0em'}:",
+        "encoding": 376
+    },
+    "1882fbd8ab0d933b2067ff2105f642544af4b311": {
+        "token": "mi{'mathvariant':'bold'}a",
+        "encoding": 377
+    },
+    "75e8112b28e4cf6c7d2bc430f51ea24f2422ea7e": {
+        "token": "mtable{'rowspacing':'0.1em','columnalign':'center','columnspacing':'1em'}",
+        "encoding": 378
+    },
+    "b8996f5512b9d7fce47bc781f3409010316ca836": {
+        "token": "mo{'lspace':'0em','rspace':'0em'}\u22a5",
+        "encoding": 379
+    },
+    "936b0e1ee9d36588f3d701f3f38652061f089913": {
+        "token": "mi{'mathvariant':'normal'}G",
+        "encoding": 380
+    },
+    "7135478514c63cabcc09011a564200d073c521a6": {
+        "token": "mi{'mathvariant':'bold-italic'}\u03b8",
+        "encoding": 381
+    },
+    "e58b9f741495fcc13a485b3d1266dc0c0823f237": {
+        "token": "mo{}\u2a01",
+        "encoding": 382
+    },
+    "1ed80aeefe067e161c4d9eaffa836aacafd15b73": {
+        "token": "mi{'mathvariant':'normal'}\u22a4",
+        "encoding": 383
+    },
+    "8c1eaa1b9851f5787273184d9f9508b4f7e15a3f": {
+        "token": "mo{}\u22c3",
+        "encoding": 384
+    },
+    "ab1e5f9d95b997864d58da7abce32a74c632d59e": {
+        "token": "mi{'mathvariant':'fraktur'}g",
+        "encoding": 385
+    },
+    "3111cdb5f7737d9698af1e73d79eff973e3312ca": {
+        "token": "mo{'fence':'true'}>",
+        "encoding": 386
+    },
+    "cc5f2862de3e1c8db4eec23a0650613d95f41061": {
+        "token": "mspace{'linebreak':'newline'}",
+        "encoding": 387
+    },
+    "4eafed7974100e51d01e2d3e67d75d5b69934064": {
+        "token": "mtext{}for\u00a0",
+        "encoding": 388
+    },
+    "9c5ef849b274f91328ba4b2885a310f12392415b": {
+        "token": "mo{'fence':'false'}\u2225",
+        "encoding": 389
+    },
+    "c0dfa5c28cfd0edf34b828b0599669b2437253e4": {
+        "token": "mo{}\n                            ",
+        "encoding": 390
+    },
+    "85d1162f1e33694efa5f22ea8460a29737cb25c9": {
+        "token": "mi{'mathvariant':'normal'}\u039e",
+        "encoding": 391
+    },
+    "f564f9049dd1e535fdd02c660d9549567faf7bdf": {
+        "token": "mi{}dim",
+        "encoding": 392
+    },
+    "fc59f171d533d0f4e263b722ba37da8a1e95cdf2": {
+        "token": "mstyle{'mathsize':'0.5em'}",
+        "encoding": 393
+    },
+    "769da3ad88ec4a240d3e78f466dc938d6c5a094a": {
+        "token": "mo{}\u221d",
+        "encoding": 394
+    },
+    "80ce9bc7421684bf57e41ea71110ce05c80daf59": {
+        "token": "mi{'mathvariant':'bold'}X",
+        "encoding": 395
+    },
+    "c2bd0ee7865fff10d22fc04f1e5ebf0ecbe1d630": {
+        "token": "mtable{'rowspacing':'0.24999999999999992em','columnalign':'rightleftrightleft','columnspacing':'0em1em0em'}",
+        "encoding": 396
+    },
+    "662d087986c3010e38967af81ffc8d8c54c542b6": {
+        "token": "mi{'mathvariant':'bold-italic'}r",
+        "encoding": 397
+    },
+    "ae16313076ffbe60335db447b6613341c2e845a7": {
+        "token": "mi{'mathvariant':'normal'}ord",
+        "encoding": 398
+    },
+    "dcc2f932bcbb77f235e881141fe4a928bc36bc40": {
+        "token": "mi{'mathvariant':'normal'}F",
+        "encoding": 399
+    },
+    "34159496b0353541278989de9baf9dca73b472b1": {
+        "token": "mtext{}.",
+        "encoding": 400
+    },
+    "9706c5ec56c9dcf3a5fa32f4a7755b9dd609d5db": {
+        "token": "mi{'mathvariant':'bold'}B",
+        "encoding": 401
+    },
+    "2093ab51369eaccf34f9e18f00fd5c2d87552197": {
+        "token": "mi{'mathvariant':'bold'}V",
+        "encoding": 402
+    },
+    "bbe9716c3c4464d8b00a43d2dbe85155896191f5": {
+        "token": "mi{'mathvariant':'normal'}k",
+        "encoding": 403
+    },
+    "33630c3c6982d4d59886326fc26ef161c6fdd4d2": {
+        "token": "mspace{'width':'0.1111111111111111em'}",
+        "encoding": 404
+    },
+    "7ea99c1888e1c971c96af82d048189eb81b2af48": {
+        "token": "mo{'lspace':'0em','rspace':'0em'}\u2026",
+        "encoding": 405
+    },
+    "54850d9516d63c23d2256992cfcdb5d4c3803fe5": {
+        "token": "mi{'mathvariant':'bold'}w",
+        "encoding": 406
+    },
+    "0adc4c3411c6e47f51c9f038a0f51de9ae778971": {
+        "token": "mi{'mathvariant':'bold'}F",
+        "encoding": 407
+    },
+    "2e355afd9179825eea1d53bdaed9a0254d490761": {
+        "token": "mi{'mathvariant':'bold'}s",
+        "encoding": 408
+    },
+    "cb5bab3e69100e57e34dbee02ed90a6f8e71d001": {
+        "token": "mn{}14",
+        "encoding": 409
+    },
+    "28cc5fa0c2e7b15b7990a6615bc50d4fd334f002": {
+        "token": "mi{'mathvariant':'bold'}m",
+        "encoding": 410
+    },
+    "13b56c05dd43876cd5b24059fc2642b736d03e75": {
+        "token": "mo{}\u2228",
+        "encoding": 411
+    },
+    "2056a56caaa27edf1ac9d6c7ca0a8ceae4dd3bb6": {
+        "token": "mtable{'rowspacing':'0.15999999999999992em','columnalign':'centercentercenter','columnspacing':'1em'}",
+        "encoding": 412
+    },
+    "a184fa537184425f5e7ff85b42760b83e4c8ef07": {
+        "token": "mn{'mathvariant':'double-struck'}1",
+        "encoding": 413
+    },
+    "5823c102181bab2a0b0c34c801b22e329dbd80c8": {
+        "token": "mi{'mathvariant':'script'}Z",
+        "encoding": 414
+    },
+    "e752566f21d934f96430c5e6308952e7acb11f32": {
+        "token": "mi{'mathvariant':'bold-italic'}\u03b1",
+        "encoding": 415
+    },
+    "a2f7edc25cd80898dcf860fea12fffe95740d6e0": {
+        "token": "mo{'lspace':'0em','rspace':'0.17em'}",
+        "encoding": 416
+    },
+    "d2547aca84e31ba8997d5510bdab1fc4ff52a05b": {
+        "token": "mi{'mathvariant':'bold'}z",
+        "encoding": 417
+    },
+    "72bf43996b6a02a2b2f5f8803b1aed9618cda0db": {
+        "token": "mi{}\u03b9",
+        "encoding": 418
+    },
+    "90bd60c324b62ab5604b94a8730c015bbd724def": {
+        "token": "mi{'mathvariant':'normal'}N",
+        "encoding": 419
+    },
+    "396ce5b96800583387df547aebb5ca491d30f728": {
+        "token": "mi{'mathvariant':'bold'}b",
+        "encoding": 420
+    },
+    "f8e400c8f685e096790d7f3fc371000a32311c86": {
+        "token": "mi{'mathvariant':'normal'}\u03a5",
+        "encoding": 421
+    },
+    "dd1df1a3258c6da69e9406297ff602ebf9c3cd05": {
+        "token": "mo{}\u2213",
+        "encoding": 422
+    },
+    "39025279516fa69ddfd9dba0232671834a234b61": {
+        "token": "mi{'mathvariant':'monospace'}R",
+        "encoding": 423
+    },
+    "f078c4cc86dc0aa635e3c7e38ae6b132a441d99d": {
+        "token": "mi{'mathvariant':'bold'}h",
+        "encoding": 424
+    },
+    "6aca653cd48cf1dfe3b02c0631654815bde78a72": {
+        "token": "mpadded{'width':'+0.6em','lspace':'0.3em'}",
+        "encoding": 425
+    },
+    "e9968dd9a30c0d128b8fb7635d723a5c5d87b9f0": {
+        "token": "mi{'mathvariant':'double-struck'}F",
+        "encoding": 426
+    },
+    "5fd73dc7c70b4b33d3ce2a0145fcaa465ad16c60": {
+        "token": "mo{'fence':'true'}<",
+        "encoding": 427
+    },
+    "87570ee83279c912771bd7298648b7c843ba66df": {
+        "token": "mo{}\u2219",
+        "encoding": 428
+    },
+    "eb7e8aa4bd3e7811af6c36980498b7035cc14609": {
+        "token": "mi{'mathvariant':'bold'}S",
+        "encoding": 429
+    },
+    "ecc0a50225122ba60efc0f78b0d1a2a6a0776278": {
+        "token": "mo{'lspace':'0em','rspace':'0em'}\u22f1",
+        "encoding": 430
+    },
+    "236f04f9c480a988614c513ebe43ba87cd96d97d": {
+        "token": "mi{'mathvariant':'normal'}\u25a1",
+        "encoding": 431
+    },
+    "ea83ba7e5866c870df41fc078356231ecf7b5e48": {
+        "token": "mi{}tan",
+        "encoding": 432
+    },
+    "7f08ee1fd07b27cb4d9c1c05272d7380a4975d07": {
+        "token": "mn{}31",
+        "encoding": 433
+    },
+    "f7a50b6c1326612303aee3868a592fdbedbd9337": {
+        "token": "mo{}\u2225",
+        "encoding": 434
+    },
+    "73f26ea77fce6b70a11fa8e3b46cca3bebb3c360": {
+        "token": "mo{}\u21d2",
+        "encoding": 435
+    },
+    "6766f0ddbac4d770b1f52bbb73c4dfc46ece102e": {
+        "token": "mo{}\n                          ",
+        "encoding": 436
+    },
+    "22d6ffd25c4033d5b8be78ff342e7828ac388ba8": {
+        "token": "mtext{},",
+        "encoding": 437
+    },
+    "401c875646c380497f1fc0ec1dfd969cd3e882af": {
+        "token": "mi{'mathvariant':'monospace'}S",
+        "encoding": 438
+    },
+    "3e98de0c0156d12c452320e4d4fb3fc4992bcecd": {
+        "token": "mn{}00",
+        "encoding": 439
+    },
+    "716a47d6972707962407ae0ae73b035925b0b577": {
+        "token": "mo{}\u00a8",
+        "encoding": 440
+    },
+    "17e22086e3e7d2155ff44a076aaa5344937a3d11": {
+        "token": "mi{'mathvariant':'bold'}i",
+        "encoding": 441
+    },
+    "5744016810f997921434e2d8223e51a32f91c7b9": {
+        "token": "mi{'mathvariant':'normal'}y",
+        "encoding": 442
+    },
+    "f9199d88060c446a163b0801a25246a4e11b5f44": {
+        "token": "mi{'mathvariant':'normal'}\u2205",
+        "encoding": 443
+    },
+    "fac633d358d2bcb240a53bb0d463cf5d13f1f364": {
+        "token": "mi{'mathvariant':'normal'}\\",
+        "encoding": 444
+    },
+    "36f1b22c7b3f7a01da1bb1e7faf4061fae8de25e": {
+        "token": "mo{'stretchy':'false'}\u230a",
+        "encoding": 445
+    },
+    "63b022e379d0d523d3b7497e23869723d3dd4159": {
+        "token": "mi{'mathvariant':'bold'}L",
+        "encoding": 446
+    },
+    "0648c94fb55e8f475c1d470a4e9d2a79a1f1ed8b": {
+        "token": "mi{'mathvariant':'bold'}U",
+        "encoding": 447
+    },
+    "373d3bb1ee8f0c1356e2d3395dfa5fee0b04d1e7": {
+        "token": "mtext{}\u00a0for\u00a0",
+        "encoding": 448
+    },
+    "cd01601587ae2e52296551daf7e5a1f8a40390c7": {
+        "token": "mi{'mathvariant':'normal'}w",
+        "encoding": 449
+    },
+    "75459b2440c6a6e6dceec8f2d48cbec815753a2c": {
+        "token": "mi{'mathvariant':'bold'}Q",
+        "encoding": 450
+    },
+    "aabd92590d23eca464f0237fa61b1cf32d8962b9": {
+        "token": "mo{'stretchy':'true'}\u23df",
+        "encoding": 451
+    },
+    "7177332862b8a782acb320eebeaa897d772d18fc": {
+        "token": "mn{}33",
+        "encoding": 452
+    },
+    "1fb054b90ab73ffcd842a48edb4dc1f58091f073": {
+        "token": "mi{'mathvariant':'bold-italic'}p",
+        "encoding": 453
+    },
+    "e5d2ef55f3745878c45b2b679d9748c022b6ea0c": {
+        "token": "mi{'mathvariant':'normal'}O",
+        "encoding": 454
+    },
+    "b10a1811f0bb4ce4dcd853e140facc85337caa20": {
+        "token": "mo{'lspace':'0em','rspace':'0em'}\u2218",
+        "encoding": 455
+    },
+    "11ddfa2761b39b03e4c3efb6b9035ff73c97864d": {
+        "token": "mstyle{'displaystyle':'true','scriptlevel':'0'}",
+        "encoding": 456
+    },
+    "9e00830b2daa43c219621c4e50769c15a7986c41": {
+        "token": "mo{'stretchy':'false'}\u230b",
+        "encoding": 457
+    },
+    "39d1d3ba0105269aaa1be41198ee62b734d70cef": {
+        "token": "mi{'mathvariant':'bold-italic'}v",
+        "encoding": 458
+    },
+    "47d868947d336e5bd579ea2092694dab24379811": {
+        "token": "mi{'mathvariant':'bold'}d",
+        "encoding": 459
+    },
+    "861923e61499123bcfb08085fbdf76922d4377ff": {
+        "token": "mi{'mathvariant':'bold'}G",
+        "encoding": 460
+    },
+    "a7ff89230b7c011efc3e9c40180c7c71a6ecf7ca": {
+        "token": "mn{}18",
+        "encoding": 461
+    },
+    "009e630dfcafc43c3631c1cae13921b61c51f189": {
+        "token": "mi{'mathvariant':'normal'}q",
+        "encoding": 462
+    },
+    "f3bc617e6dad2051f30ce0a7c5368a11e808b4cc": {
+        "token": "mi{}\n                ",
+        "encoding": 463
+    },
+    "11d305f6b42e52262392f3394258eba82dfbe871": {
+        "token": "mi{'mathvariant':'bold-italic'}\u03b2",
+        "encoding": 464
+    },
+    "36a5e5f785801acf352ef26ecec3961fde9e5864": {
+        "token": "mn{}0.5",
+        "encoding": 465
+    },
+    "6fbf3373948646960f24bdd735bcbe6dad419f87": {
+        "token": "mn{'mathvariant':'bold'}2",
+        "encoding": 466
+    },
+    "a1bb4ce5913a86c4dd1f6017d1eeedbff86fa12e": {
+        "token": "mi{'mathvariant':'normal'}\u211c",
+        "encoding": 467
+    },
+    "56b394b796b2b5e0bc9b4b6ecc91333ea4c73434": {
+        "token": "mi{'mathvariant':'bold'}g",
+        "encoding": 468
+    },
+    "aadb9b8d084825f948c495b015e93977255c3424": {
+        "token": "mi{'mathvariant':'bold'}D",
+        "encoding": 469
+    },
+    "0654c119d9c1df8f5c14dc4cd8dce1fdb640fcda": {
+        "token": "mi{'mathvariant':'double-struck'}I",
+        "encoding": 470
+    },
+    "c4fef8f6aba6d49def53a8a085cb1120aeb7f206": {
+        "token": "mi{'mathvariant':'bold'}t",
+        "encoding": 471
+    },
+    "568d63ebda01a9ad892fbeca68922e4d2a305275": {
+        "token": "mi{}\n                    ",
+        "encoding": 472
+    },
+    "9060b95b945a672b858db4adf717c88f7b998228": {
+        "token": "mi{'mathvariant':'normal'}@",
+        "encoding": 473
+    },
+    "3c18a6658f9345da75624671afb69cf8f309c69a": {
+        "token": "mi{'mathvariant':'bold'}c",
+        "encoding": 474
+    },
+    "41068fc14c89dfe2481fa8b39ab67b06e253c269": {
+        "token": "mi{'mathvariant':'bold-italic'}y",
+        "encoding": 475
+    },
+    "18b04e3bee1239e569b9064882198ad1b4fd2fc9": {
+        "token": "mi{'mathvariant':'bold-italic'}\u03bb",
+        "encoding": 476
+    },
+    "50f7768112ddea8b8f025c5367be3507ca174629": {
+        "token": "mi{'mathvariant':'double-struck'}D",
+        "encoding": 477
+    },
+    "9171403e9d83dc73afe3e711bbed1cdeed72c483": {
+        "token": "mn{}01",
+        "encoding": 478
+    },
+    "85d85fd6b8fb82c5fc35bcb338974ce1f81e8308": {
+        "token": "mi{'mathvariant':'bold'}f",
+        "encoding": 479
+    },
+    "6d194d7e9870ea7b1775f76dd1c0499dce694f8b": {
+        "token": "mi{'mathvariant':'normal'}\u2203",
+        "encoding": 480
+    },
+    "4015a2642e123cfc4d922baab12b060ca0049899": {
+        "token": "mo{}\n              ",
+        "encoding": 481
+    },
+    "511ae196919b6428f82c4fee298bb970b551b708": {
+        "token": "mi{}tanh",
+        "encoding": 482
+    },
+    "1373652c86a8610e6213b5fa49f9cefcd5c16047": {
+        "token": "mi{'mathvariant':'fraktur'}p",
+        "encoding": 483
+    },
+    "8566e0b477fc612d995a6221a235f9fa2c585e67": {
+        "token": "mtext{'mathvariant':'bold'}r",
+        "encoding": 484
+    },
+    "b58e2f2a95247eba3ab15ae78e758813e1fe7ef4": {
+        "token": "mi{'mathvariant':'bold'}K",
+        "encoding": 485
+    },
+    "fefaa5f8d6d262b8ec80cee564e49fb8c9b4fa61": {
+        "token": "mi{'mathvariant':'bold'}I",
+        "encoding": 486
+    },
+    "65f6601653748e22f8ed89e374bb247704ebb909": {
+        "token": "mi{'mathvariant':'bold'}M",
+        "encoding": 487
+    },
+    "1c8dc373502d8525e9abaa789d2dce35e3c0ae92": {
+        "token": "mpadded{'width':'0px'}",
+        "encoding": 488
+    },
+    "788f09264f88634014dacd5423aa32fa2100318a": {
+        "token": "mi{}Pr",
+        "encoding": 489
+    },
+    "1306f950bbb8987224126db3e69e173a133e9cc9": {
+        "token": "mi{'mathvariant':'normal'}\u266f",
+        "encoding": 490
+    },
+    "36827e56154d6c8f95866198427e73ba61f9cda4": {
+        "token": "mi{}\u03c2",
+        "encoding": 491
+    },
+    "4fff87283f7c5c66dcf02dafa3dfe80e49a2ac16": {
+        "token": "mi{'mathvariant':'double-struck'}A",
+        "encoding": 492
+    },
+    "7b36cfd342d8f5ed7c47c2457c3ae6d375b23d8d": {
+        "token": "mi{'mathvariant':'bold-italic'}q",
+        "encoding": 493
+    },
+    "cb885c69946a579e6738c7aa6bc7883f317b71b1": {
+        "token": "mi{'mathvariant':'normal'}\u25b3",
+        "encoding": 494
+    },
+    "67e52d5051e9af6d8b67f2681754f895dac014ec": {
+        "token": "mi{'mathvariant':'bold'}W",
+        "encoding": 495
+    },
+    "34e592388cc462f9433bed8ef68b99673c6d648e": {
+        "token": "mo{'lspace':'0em','rspace':'0em'}\u22c5",
+        "encoding": 496
+    },
+    "e6cb32060029b452a086cfc1c56d4b165b3923a9": {
+        "token": "mtext{}Tr",
+        "encoding": 497
+    },
+    "9ab50be4a5aded47078163c3460737612f2058fb": {
+        "token": "mtext{}if",
+        "encoding": 498
+    },
+    "77bd8e3424a2f654f50ec8b9964b96ad077bd24a": {
+        "token": "mi{'mathvariant':'normal'}lim\u2009sup",
+        "encoding": 499
+    },
+    "5bce93867513f3108effc275ef8842eaf903837a": {
+        "token": "mi{'mathvariant':'bold'}C",
+        "encoding": 500
+    },
+    "e7c891075e0752bb18fe8b39fcf66289f7eb6a6f": {
+        "token": "mtext{}\u00a0for\u00a0all\u00a0",
+        "encoding": 501
+    },
+    "126c5a481358f9ad17815ebeb3be1aaf69cdbfa8": {
+        "token": "mi{}\u03c5",
+        "encoding": 502
+    },
+    "119e69ea34987a385cc9481697419d5b54f165fb": {
+        "token": "mn{}17",
+        "encoding": 503
+    },
+    "53dce4096fbfbf3bc8a9504661e1e5720f97669a": {
+        "token": "mn{}27",
+        "encoding": 504
+    },
+    "8e653bca57d4030312fe262991020ae90ae3bc6d": {
+        "token": "mo{}\n          ",
+        "encoding": 505
+    },
+    "8f8c0753f5b57818d8d323dd8558eff4dcf21aa6": {
+        "token": "mi{'mathvariant':'fraktur'}a",
+        "encoding": 506
+    },
+    "e9f77388b9fae467585fb19182e5018161d5f113": {
+        "token": "mo{}\u2a7e",
+        "encoding": 507
+    },
+    "d84104aa9781cc51b5127a22098a03c1650f1bfe": {
+        "token": "[CLS]",
+        "encoding": 508
+    },
+    "06619097355e9c1e9b5cf111433e434e6c2d7893": {
+        "token": "[MASK]",
+        "encoding": 509
+    },
+    "7fdab9e8e738660c87d429799a5a016398c5789a": {
+        "token": "[SEP]",
+        "encoding": 510
+    },
+    "b8894f9d500438f04df986da58e576b87a06059c": {
+        "token": "[UNK]",
+        "encoding": 511
+    }
+}

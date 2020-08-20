@@ -217,7 +217,8 @@ def load_block(target, block_id, buffer_size):
 
     runtime = time.time() - begin
 
-    print("BLOCK_{0} with {1} in {2:.3} s.".format(block_id, count, runtime))
+    if c.debug:
+        print("BLOCK_{0} with {1} in {2:.3} s.".format(block_id, count, runtime))
 
     return tf_dataset
 
@@ -303,19 +304,19 @@ def train_model():
             start = time.time()
             tr_l1_acc, tr_a1_acc, tr_a2_acc, tr_step = 0, 0, 0, 0
 
-            for b in range(c.train_blocks):
+            for block_id in range(c.train_blocks):
                 if c.train_blocks > 1:
-                    tf_train_dataset = load_train_block(b)
+                    tf_train_dataset = load_train_block(block_id)
                 else:
                     if e <= 0:
-                        tf_train_dataset = load_train_block(b)
+                        tf_train_dataset = load_train_block(block_id)
 
                 for x, x_id, x_seg, y_mask, y_id, y_w, sp in tf_train_dataset:
                     l1, a1, a2 = distributed_train_step(x, x_id, x_seg, y_mask, y_id, y_w, sp)
                     tr_l1_acc, tr_a1_acc, tr_a2_acc, tr_step = tr_l1_acc + l1, tr_a1_acc + a1, tr_a2_acc + a2, tr_step + 1
                     l1_mu, a1_mu, a2_mu = tr_l1_acc / tr_step, tr_a1_acc / tr_step, tr_a2_acc / tr_step
                     percent = 1e2 * (tr_step / tr_steps)
-                    printf("TRAINING : {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4} ", tr_step, percent, l1_mu, a1_mu, a2_mu)
+                    printf("TRAINING : {} {} ({:.3}%) L1 = {:.4} A1 = {:.4} A2 = {:.4} ", block_id, tr_step, percent, l1_mu, a1_mu, a2_mu)
 
             if e <= 0:
                 tf_test_dataset = load_test_block(0)
@@ -335,7 +336,7 @@ def train_model():
             delta, percent = time.time() - start, (e / c.epochs) * 1e2
             printf(template.format(e, percent, tr_l1_acc, va_l1_acc, tr_a1_acc, tr_a2_acc, va_a1_acc, va_a2_acc, delta))
 
-            if (e + 1) % 5 == 0:
+            if (e + 1) % c.checkpoint_factor == 0:
                 ckpt_save_path = ckpt_manager.save()
                 print('Saving checkpoint for epoch {} at {}'.format(e + 1, ckpt_save_path))
 

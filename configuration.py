@@ -4,6 +4,7 @@ import tensorflow as tf
 
 class Configuration(object):
     # checkpoints
+    checkpoint_factor = None
     checkpoint_folder = None
     vocab_folder = None
 
@@ -58,6 +59,8 @@ class Configuration(object):
             self.configuration = json.load(stream)
 
         # checkpoints
+        self.checkpoint_factor = int(self.configuration["data"]["checkpoint_factor"])
+        print("CHECKPOINT_FACTOR = {}".format(self.checkpoint_factor))
         self.checkpoint_folder = self.configuration["data"]["checkpoint_folder"]
         print("CHECKPOINT_FOLDER = {}".format(self.checkpoint_folder))
         self.vocab_folder = self.configuration["data"]["vocab_folder"]

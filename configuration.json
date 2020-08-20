@@ -24,7 +24,7 @@
     "train_buffer_size": 999936,
     "test_buffer_size":  999936,
     "train_blocks":      106,
-    "test_blocks":       1,
+    "test_blocks":       5,
     "epochs":            10,
     "learning_rate":     2e-5
   },

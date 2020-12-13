@@ -1,7 +1,7 @@
 {
   "data":      {
     "checkpoint_factor":     1,
-    "checkpoint_folder":     "checkpoints/l8_h256_lw",
+    "checkpoint_folder":     "checkpoints/l4_h128_lw",
     "vocab_folder":          "vocabs/sub_vocab_bert_file.txt",
     "train_data_dir":        "data/layerwise/train/",
     "test_data_dir":         "data/layerwise/test/",
@@ -13,14 +13,14 @@
     "vocab_size":        512,
     "max_seq_len":       256,
     "mask_prob":         0.15,
-    "num_layers":        8,
-    "hidden_size":       256,
+    "num_layers":        4,
+    "hidden_size":       128,
     "intermediate_size": 768,
     "num_heads":         4,
     "drop_rate":         0.1
   },
   "training":  {
-    "batch_size":        128,
+    "batch_size":        512,
     "train_buffer_size": 999936,
     "test_buffer_size":  999936,
     "train_blocks":      106,

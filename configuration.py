@@ -12,6 +12,7 @@ class Configuration(object):
     train_data_dir = None
     test_data_dir = None
 
+    # pre-training
     x_file = None
     x_id_file = None
     x_seg_file = None
@@ -19,6 +20,9 @@ class Configuration(object):
     y_id_file = None
     y_w_file = None
     sp_file = None
+
+    # fine-tuning
+    y_file = None
 
     # validation
     train_validation_file = None
@@ -41,6 +45,12 @@ class Configuration(object):
     blocks = None
     epochs = None
     learning_rate = None
+
+    # mode
+    pre_training = None
+    reload = None
+    freeze = None
+    freeze_interval = None
 
     # execution
     gpu_mode = None
@@ -72,6 +82,7 @@ class Configuration(object):
         self.test_data_dir = self.configuration["data"]["test_data_dir"]
         print("TEST_DATA_DIR = {}".format(self.test_data_dir))
 
+        # pre-training
         self.x_file = "x.set"
         print("X_FILE = {}".format(self.x_file))
         self.x_id_file = "x_id.set"
@@ -86,6 +97,10 @@ class Configuration(object):
         print("Y_W_FILE = {}".format(self.y_w_file))
         self.sp_file = "sp.set"
         print("SP_FILE = {}".format(self.sp_file))
+
+        # fine-tuning
+        self.y_file = "y.set"
+        print("Y_FILE = {}".format(self.y_file))
 
         # validation
         self.train_validation_file = self.configuration["data"]["train_validation_file"]
@@ -130,6 +145,16 @@ class Configuration(object):
         print("EPOCHS = {}".format(self.epochs))
         self.learning_rate = self.configuration["training"]["learning_rate"]
         print("LEARNING_RATE = {}".format(self.learning_rate))
+
+        # mode
+        self.pre_training = self.configuration["mode"]["pre_training"]
+        print("PRE_TRAINING = {}".format(self.pre_training))
+        self.reload = self.configuration["mode"]["reload"]
+        print("RELOAD = {}".format(self.reload))
+        self.freeze = self.configuration["mode"]["freeze"]
+        print("FREEZE = {}".format(self.freeze))
+        self.freeze_interval = int(self.configuration["mode"]["freeze_interval"])
+        print("FREEZE_INTERVAL = {}".format(self.freeze_interval))
 
         # execution
         self.gpu_mode = self.configuration["execution"]["gpu_mode"]

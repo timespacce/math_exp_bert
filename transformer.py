@@ -20,56 +20,105 @@ class Transformer(tf.keras.Model):
         self.input_vocab_size = input_vocab_size
         self.target_vocab_size = target_vocab_size
         self.rate = rate
-
+        # EMBEDDING
         self.bert_embedding = BERT_Embedding(self.input_vocab_size, self.hidden_size, self.target_vocab_size, self.max_seq_len)
-
+        # NORMALIZATION
         self.pre_bn = tf.keras.layers.LayerNormalization(epsilon=1e-6)
         self.pre_do = tf.keras.layers.Dropout(rate)
-
+        # ENCODING
         self.encoder = Encoder(self.num_layers, self.hidden_size, self.intermediate_size, self.num_heads, self.rate)
-
+        # MASKING
         self.wh = tf.keras.layers.Dense(self.hidden_size)
         # self.activation = tf.keras.layers.LeakyReLU(alpha=1e-1)
         self.activation = GeLU()
         self.post_bn = tf.keras.layers.LayerNormalization(epsilon=1e-6)
         self.sm_seq = tf.keras.layers.Softmax(axis=-1)
-
+        # CLASSIFICATION
+        # self.wns = tf.keras.layers.Dense(hidden_size, activation='tanh')
         self.wns = tf.keras.layers.Dense(2, activation='tanh')
         self.sm_ns = tf.keras.layers.Softmax(axis=-1)
         return
 
-    def call(self, in_seq, enc_padding_mask, in_seg, mask_indices):
+    def classify(self, x_enc, mask_indices=None):
+        """
+
+        Args:
+            x_enc: (batch_size, sequence_len, embedding_len)
+            mask_indices: (batch_size, sequence_len)
+
+        Returns:
+
+        """
+
+        # CLASSIFICATION
+        return self.pre_train_classify(x_enc=x_enc, mask_indices=mask_indices)
+        # return self.fine_tune_classify(x_enc=x_enc)
+
+    def pre_train_classify(self, x_enc, mask_indices):
+        """
+
+        Args:
+            x_enc: (batch_size, sequence_len, embedding_len)
+            mask_indices: (batch_size, sequence_len)
+
+        Returns:
+
+        """
+        # MASKING
+        y_hat_mask = tf.gather(x_enc, mask_indices, batch_dims=1)  # (batch_size, mask_len, embedding_len)
+        y_hat_mask = self.wh(y_hat_mask)  # (batch_size, mask_len, embedding_len)
+        y_hat_mask = self.activation(y_hat_mask)  # (batch_size, mask_len, embedding_len)
+        y_hat_mask = self.post_bn(y_hat_mask)  # (batch_size, mask_len, embedding_len)
+        word_embedding_weights = self.bert_embedding.get_word_embeddings()
+        y_hat_mask = tf.matmul(y_hat_mask, word_embedding_weights, transpose_b=True)  # (batch_size, mask_len, dictionary_len)
+        y_hat_mask = self.sm_seq(y_hat_mask)  # (batch_size, mask_len, dictionary_len)
+        # CLASSIFICATION
+        y_hat_sp = x_enc[:, 0:1, :]  # (batch_size, 1, hidden_size)
+        y_hat_sp = tf.squeeze(y_hat_sp, axis=1)  # (batch_size, hidden_size)
+        y_hat_sp = self.wns(y_hat_sp)  # (batch_size, 1, 2)
+        y_hat_sp = self.sm_ns(y_hat_sp)  # (batch_size, 1, 2)
+        ##
+        return y_hat_mask, y_hat_sp
+
+    def fine_tune_classify(self, x_enc):
+        """
+
+        Args:
+            x_enc: (batch_size, sequence_len, embedding_len)
+
+        Returns:
+
+        """
+
+        # CLASSIFICATION GENERATIVE
+        # y_hat = x_enc[:, :13, :]
+        # y_hat = tf.matmul(y_hat, self.bert_embedding.get_word_embeddings(), transpose_b=True)  # (batch_size, 2, dictionary_len)
+        # y_hat = self.sm_seq(y_hat)  # (batch_size, mask_len, dictionary_len)
+
+        # CLASSIFICATION DISCRIMINATIVE
+        y_hat_dc = x_enc[:, 0:1, :]  # (batch_size, 1, hidden_size)
+        # y_hat_dc = tf.squeeze(y_hat_dc, axis=1)  # (batch_size, hidden_size)
+        y_hat_dc = self.wns(y_hat_dc)  # (batch_size, 1, 2)
+        y_hat_dc = self.sm_ns(y_hat_dc)  # (batch_size, 1, 2)
+        return y_hat_dc
+
+    def call(self, in_seq, enc_padding_mask, in_seg):
         """
 
         Args:
             in_seq:             (batch_size, sequence_len)
             enc_padding_mask:   (batch_size, sequence_len)
             in_seg:             (batch_size, sequence_len)
-            mask_indices:       (batch_size, sequence_len)
 
         Returns:
 
         """
 
-        y_hat = self.bert_embedding(in_seq, in_seg)
-
-        y_hat = self.pre_bn(y_hat)  # (batch_size, sequence_len, embedding_len)
-        y_hat = self.pre_do(y_hat)  # (batch_size, sequence_len, embedding_len)
-
-        y_hat = self.encoder(y_hat, enc_padding_mask)  # (batch_size, sequence_len, embedding_len)
-
-        y_hat_mask = tf.gather(y_hat, mask_indices, batch_dims=1)  # (batch_size, mask_len, embedding_len)
-        y_hat_mask = self.wh(y_hat_mask)  # (batch_size, mask_len, embedding_len)
-        y_hat_mask = self.activation(y_hat_mask)
-        y_hat_mask = self.post_bn(y_hat_mask)  # (batch_size, mask_len, embedding_len)
-
-        y_hat_mask = tf.matmul(y_hat_mask, self.bert_embedding.get_word_embeddings(), transpose_b=True)
-        # (batch_size, mask_len, dictionary_len)
-        y_hat_mask = self.sm_seq(y_hat_mask)  # (batch_size, mask_len, dictionary_len)
-
-        y_hat_ns = y_hat[:, 0:1, :]
-        y_hat_ns = tf.squeeze(y_hat_ns, axis=1)  # (batch_size, 1, hidden_size)
-        y_hat_ns = self.wns(y_hat_ns)  # (batch_size, 1, 2)
-        y_hat_ns = self.sm_ns(y_hat_ns)  # (batch_size, 1, 2)
-
-        return y_hat_mask, y_hat_ns
+        # EMBEDDING
+        x_emb = self.bert_embedding(in_seq, in_seg)  # (batch_size, sequence_len, hidden_size)
+        # ENCODING
+        x_emb = self.pre_bn(x_emb)  # (batch_size, sequence_len, hidden_size)
+        x_emb = self.pre_do(x_emb)  # (batch_size, sequence_len, hidden_size)
+        x_enc = self.encoder(x_emb, enc_padding_mask)  # (batch_size, sequence_len, hidden_size)
+        ##
+        return x_enc

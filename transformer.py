@@ -34,7 +34,7 @@ class Transformer(tf.keras.Model):
         self.post_bn = tf.keras.layers.LayerNormalization(epsilon=1e-6)
         self.sm_seq = tf.keras.layers.Softmax(axis=-1)
         # CLASSIFICATION
-        # self.wns = tf.keras.layers.Dense(hidden_size, activation='tanh')
+        # self.wsp = tf.keras.layers.Dense(hidden_size, activation='tanh')
         self.wns = tf.keras.layers.Dense(2, activation='tanh')
         self.sm_ns = tf.keras.layers.Softmax(axis=-1)
         return
@@ -75,6 +75,7 @@ class Transformer(tf.keras.Model):
         # CLASSIFICATION
         y_hat_sp = x_enc[:, 0:1, :]  # (batch_size, 1, hidden_size)
         y_hat_sp = tf.squeeze(y_hat_sp, axis=1)  # (batch_size, hidden_size)
+        # y_hat_sp = self.wsp(y_hat_sp)  # (batch_size, hidden_size)
         y_hat_sp = self.wns(y_hat_sp)  # (batch_size, 1, 2)
         y_hat_sp = self.sm_ns(y_hat_sp)  # (batch_size, 1, 2)
         ##

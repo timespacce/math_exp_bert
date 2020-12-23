@@ -170,12 +170,12 @@ class Configuration(object):
 
         # gpu
         try:
-            physical_gpus = tf.config.experimental.list_physical_devices('GPU')
+            physical_gpus = tf.config.list_physical_devices('GPU')
             self.physical_gpu_count = len(physical_gpus)
             if self.gpu_mode.lstrip("-+").isdigit():
                 gpu_id = int(self.gpu_mode)
-                tf.config.experimental.set_visible_devices(physical_gpus[gpu_id], 'GPU')
-            logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+                tf.config.set_visible_devices(physical_gpus[gpu_id], 'GPU')
+            logical_gpus = tf.config.list_logical_devices('GPU')
             self.logical_gpu_count = len(logical_gpus)
             print("PHYSICAL_GPUS_COUNT = {0}".format(self.physical_gpu_count))
             print("LOGICAL_GPUS_COUNT = {0}".format(self.logical_gpu_count))

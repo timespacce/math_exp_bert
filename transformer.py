@@ -35,7 +35,7 @@ class Transformer(tf.keras.Model):
         self.sm_seq = tf.keras.layers.Softmax(axis=-1)
         # CLASSIFICATION
         # self.wsp = tf.keras.layers.Dense(hidden_size, activation='tanh')
-        self.wns = tf.keras.layers.Dense(2)
+        self.wns = tf.keras.layers.Dense(2, activation='tanh')
         self.sm_ns = tf.keras.layers.Softmax(axis=-1)
         return
 
@@ -51,8 +51,8 @@ class Transformer(tf.keras.Model):
         """
 
         # CLASSIFICATION
-        # return self.pre_train_classify(x_enc=x_enc, mask_indices=mask_indices)
-        return self.fine_tune_classify(x_enc=x_enc)
+        return self.pre_train_classify(x_enc=x_enc, mask_indices=mask_indices)
+        # return self.fine_tune_classify(x_enc=x_enc)
 
     def pre_train_classify(self, x_enc, mask_indices):
         """

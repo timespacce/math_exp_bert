@@ -1,5 +1,6 @@
 import json
 import tensorflow as tf
+from tensorflow.keras.mixed_precision import experimental as mixed_precision
 
 
 class Configuration(object):
@@ -179,6 +180,9 @@ class Configuration(object):
             self.logical_gpu_count = len(logical_gpus)
             print("PHYSICAL_GPUS_COUNT = {0}".format(self.physical_gpu_count))
             print("LOGICAL_GPUS_COUNT = {0}".format(self.logical_gpu_count))
+            policy = mixed_precision.Policy('float32')
+            mixed_precision.set_policy(policy)
+            print('Compute / Variable : {0} / {1}'.format(policy.compute_dtype, policy.variable_dtype))
         except RuntimeError as e:
             print(e)
             exit()

@@ -1,4 +1,5 @@
 import os
+import sys
 import time
 import numpy as np
 import tensorflow as tf
@@ -74,8 +75,10 @@ def accuracy_function(y_mask, y_mask_w, y_hat_mask, y_sp, y_hat_sp):
 
 def load_configuration():
     global c
-
-    configuration_file = "configuration.json"
+    if len(sys.argv) < 2:
+        print("CONFIGURATION-FILE is expected as first argument.")
+        exit(1)
+    configuration_file = sys.argv[1]
     c = Configuration(configuration_file)
 
     return

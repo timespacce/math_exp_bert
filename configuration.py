@@ -176,7 +176,7 @@ class Configuration(object):
         tpu, gpu = False, True
 
         def initialize_tpu():
-            tpu_name = "asd"
+            tpu_name = "tpu-demo"
             resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu=tpu_name)
             tf.config.experimental_connect_to_cluster(resolver)
             tf.tpu.experimental.initialize_tpu_system(resolver)

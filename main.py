@@ -337,9 +337,9 @@ def pre_train_model():
             if not replicated:
                 return l1, a1, a2
 
-            acc_l1 = tf.reduce_sum(l1.values, axis=-1) / c.gpu_count
-            acc_a1 = tf.reduce_sum(a1.values, axis=-1) / c.gpu_count
-            acc_a2 = tf.reduce_sum(a2.values, axis=-1) / c.gpu_count
+            acc_l1 = tf.reduce_sum(l1.values, axis=-1) / c.strategy.num_replicas_in_sync
+            acc_a1 = tf.reduce_sum(a1.values, axis=-1) / c.strategy.num_replicas_in_sync
+            acc_a2 = tf.reduce_sum(a2.values, axis=-1) / c.strategy.num_replicas_in_sync
 
             return acc_l1, acc_a1, acc_a2
 
@@ -362,9 +362,9 @@ def pre_train_model():
             if not replicated:
                 return l1, a1, a2
 
-            acc_l1 = tf.reduce_sum(l1.values, axis=-1) / c.gpu_count
-            acc_a1 = tf.reduce_sum(a1.values, axis=-1) / c.gpu_count
-            acc_a2 = tf.reduce_sum(a2.values, axis=-1) / c.gpu_count
+            acc_l1 = tf.reduce_sum(l1.values, axis=-1) / c.strategy.num_replicas_in_sync
+            acc_a1 = tf.reduce_sum(a1.values, axis=-1) / c.strategy.num_replicas_in_sync
+            acc_a2 = tf.reduce_sum(a2.values, axis=-1) / c.strategy.num_replicas_in_sync
 
             return acc_l1, acc_a1, acc_a2
 
@@ -496,9 +496,9 @@ def pre_train_inference(dataset, validation_file, buffer_size, blocks):
             if not replicated:
                 return y_hat, y_sp, l1, a1, a2
 
-            acc_l1 = tf.reduce_sum(l1.values, axis=-1) / c.gpu_count
-            acc_a1 = tf.reduce_sum(a1.values, axis=-1) / c.gpu_count
-            acc_a2 = tf.reduce_sum(a2.values, axis=-1) / c.gpu_count
+            acc_l1 = tf.reduce_sum(l1.values, axis=-1) / c.strategy.num_replicas_in_sync
+            acc_a1 = tf.reduce_sum(a1.values, axis=-1) / c.strategy.num_replicas_in_sync
+            acc_a2 = tf.reduce_sum(a2.values, axis=-1) / c.strategy.num_replicas_in_sync
 
             return y_hat, y_sp, acc_l1, acc_a1, acc_a2
 
@@ -599,8 +599,8 @@ def fine_tune_model():
             if not replicated:
                 return l1, a1
 
-            acc_l1 = tf.reduce_sum(l1.values, axis=-1) / c.gpu_count
-            acc_a1 = tf.reduce_sum(a1.values, axis=-1) / c.gpu_count
+            acc_l1 = tf.reduce_sum(l1.values, axis=-1) / c.strategy.num_replicas_in_sync
+            acc_a1 = tf.reduce_sum(a1.values, axis=-1) / c.strategy.num_replicas_in_sync
 
             return acc_l1, acc_a1
 
@@ -623,8 +623,8 @@ def fine_tune_model():
             if not replicated:
                 return l1, a1
 
-            acc_l1 = tf.reduce_sum(l1.values, axis=-1) / c.gpu_count
-            acc_a1 = tf.reduce_sum(a1.values, axis=-1) / c.gpu_count
+            acc_l1 = tf.reduce_sum(l1.values, axis=-1) / c.strategy.num_replicas_in_sync
+            acc_a1 = tf.reduce_sum(a1.values, axis=-1) / c.strategy.num_replicas_in_sync
 
             return acc_l1, acc_a1
 

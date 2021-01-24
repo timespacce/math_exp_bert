@@ -1,6 +1,5 @@
 import json
 import tensorflow as tf
-from tensorflow.keras.mixed_precision import experimental as mixed_precision
 
 
 class Configuration(object):
@@ -59,6 +58,7 @@ class Configuration(object):
     infer = None
     eager = None
     debug = None
+    strategy = None
 
     # gpu
     physical_gpu_count = None
@@ -169,26 +169,48 @@ class Configuration(object):
         self.debug = self.configuration["execution"]["debug"]
         print("DEBUG = {}".format(self.debug))
 
-        # gpu
-        try:
-            physical_gpus = tf.config.list_physical_devices('GPU')
-            self.physical_gpu_count = len(physical_gpus)
-            if self.gpu_mode.lstrip("-+").isdigit():
-                gpu_id = int(self.gpu_mode)
-                tf.config.set_visible_devices(physical_gpus[gpu_id], 'GPU')
-            logical_gpus = tf.config.list_logical_devices('GPU')
-            self.logical_gpu_count = len(logical_gpus)
-            print("PHYSICAL_GPUS_COUNT = {0}".format(self.physical_gpu_count))
-            print("LOGICAL_GPUS_COUNT = {0}".format(self.logical_gpu_count))
-            policy = mixed_precision.Policy('float32')
-            mixed_precision.set_policy(policy)
-            print('Compute / Variable : {0} / {1}'.format(policy.compute_dtype, policy.variable_dtype))
-        except RuntimeError as e:
-            print(e)
-            exit()
+        self.initialize_strategy()
+        return
 
-        if self.eager:
-            tf.config.experimental_run_functions_eagerly(True)
-            tf.executing_eagerly()
-        self.b_p_gpu = int(self.batch_size / self.logical_gpu_count)
-        print("BATCHES_PRO_GPU = {0}".format(self.b_p_gpu))
+    def initialize_strategy(self):
+        tpu, gpu = False, True
+
+        def initialize_tpu():
+            tpu_name = "asd"
+            resolver = tf.distribute.cluster_resolver.TPUClusterResolver(tpu=tpu_name)
+            tf.config.experimental_connect_to_cluster(resolver)
+            tf.tpu.experimental.initialize_tpu_system(resolver)
+            print("All devices: ", tf.config.list_logical_devices('TPU'))
+            ##
+            self.strategy = tf.distribute.TPUStrategy(resolver)
+
+        def initialize_gpu():
+            try:
+                physical_gpus = tf.config.list_physical_devices('GPU')
+                self.physical_gpu_count = len(physical_gpus)
+                if self.gpu_mode.lstrip("-+").isdigit():
+                    gpu_id = int(self.gpu_mode)
+                    tf.config.set_visible_devices(physical_gpus[gpu_id], 'GPU')
+                logical_gpus = tf.config.list_logical_devices('GPU')
+                self.logical_gpu_count = len(logical_gpus)
+                print("PHYSICAL_GPUS_COUNT = {0}".format(self.physical_gpu_count))
+                print("LOGICAL_GPUS_COUNT = {0}".format(self.logical_gpu_count))
+                ##
+                self.strategy = tf.distribute.MirroredStrategy()
+                ##
+                if self.eager:
+                    tf.config.experimental_run_functions_eagerly(True)
+                    tf.executing_eagerly()
+                self.b_p_gpu = int(self.batch_size / self.logical_gpu_count)
+                print("BATCHES_PRO_GPU = {0}".format(self.b_p_gpu))
+            except RuntimeError as e:
+                print(e)
+                exit()
+
+        if tpu:
+            initialize_tpu()
+
+        if gpu:
+            initialize_gpu()
+
+        return

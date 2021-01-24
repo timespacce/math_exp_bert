@@ -13,8 +13,6 @@ model = None
 optimizer = None
 ckpt_manager = None
 
-strategy = None
-
 token_loss_func = None
 sp_loss_func = None
 mask_loss = None
@@ -85,13 +83,11 @@ def load_configuration():
 
 
 def build_model():
-    global c, strategy, model, mask_loss, optimizer, ckpt_manager, token_loss_func, sp_loss_func
-
-    strategy = tf.distribute.MirroredStrategy()
+    global c, model, mask_loss, optimizer, ckpt_manager, token_loss_func, sp_loss_func
 
     steps = c.epochs * (c.train_buffer_size / c.batch_size)
 
-    with strategy.scope():
+    with c.strategy.scope():
         model = Transformer(max_seq_len=c.max_seq_len,
                             b_p_gpu=c.b_p_gpu,
                             num_layers=c.num_layers,
@@ -311,12 +307,12 @@ def load_fine_tuning_block(target, block_id, buffer_size):
 ##
 
 def pre_train_model():
-    global c, strategy, model, mask_loss, optimizer, ckpt_manager
+    global c, model, mask_loss, optimizer, ckpt_manager
 
     if not c.train or c.train_buffer_size == 0:
         return
 
-    with strategy.scope():
+    with c.strategy.scope():
 
         @tf.function
         def distributed_train_step(x, x_id, x_seg, y_mask, y_id, y_w, sp):
@@ -334,9 +330,9 @@ def pre_train_model():
 
                 return loss, mask_accuracy, label_accuracy
 
-            l1, a1, a2 = strategy.run(per_gpu_train_step, args=(x, x_id, x_seg, y_mask, y_id, y_w, sp))
+            l1, a1, a2 = c.strategy.run(per_gpu_train_step, args=(x, x_id, x_seg, y_mask, y_id, y_w, sp))
 
-            replicated = strategy.num_replicas_in_sync > 1
+            replicated = c.strategy.num_replicas_in_sync > 1
 
             if not replicated:
                 return l1, a1, a2
@@ -359,9 +355,9 @@ def pre_train_model():
 
                 return loss, mask_accuracy, label_accuracy
 
-            l1, a1, a2 = strategy.run(per_gpu_test_step, args=(x, x_id, x_seg, y_mask, y_id, y_w, sp))
+            l1, a1, a2 = c.strategy.run(per_gpu_test_step, args=(x, x_id, x_seg, y_mask, y_id, y_w, sp))
 
-            replicated = strategy.num_replicas_in_sync > 1
+            replicated = c.strategy.num_replicas_in_sync > 1
 
             if not replicated:
                 return l1, a1, a2
@@ -376,12 +372,12 @@ def pre_train_model():
 
         def load_train_block(b_id):
             train_data = load_pre_training_block(c.train_data_dir, b_id, c.train_buffer_size)
-            train_dataset = strategy.experimental_distribute_dataset(train_data)
+            train_dataset = c.strategy.experimental_distribute_dataset(train_data)
             return train_dataset
 
         def load_test_block(b_id):
             test_data = load_pre_training_block(c.test_data_dir, b_id, c.test_buffer_size)
-            test_dataset = strategy.experimental_distribute_dataset(test_data)
+            test_dataset = c.strategy.experimental_distribute_dataset(test_data)
             return test_dataset
 
         tr_steps = (c.train_buffer_size * c.train_blocks) // c.batch_size
@@ -433,12 +429,12 @@ def pre_train_model():
 
 
 def pre_train_inference(dataset, validation_file, buffer_size, blocks):
-    global c, strategy, model, mask_loss, optimizer, ckpt_manager
+    global c, model, mask_loss, optimizer, ckpt_manager
 
     if not c.infer or buffer_size == 0:
         return
 
-    with strategy.scope():
+    with c.strategy.scope():
         s = open(validation_file, mode='w', encoding='utf-8')
         row_format = "{0}\t{1}\t{2}\t{3}\n"
         batch_format = "{0}\t{1}\t{2}\n"
@@ -493,9 +489,9 @@ def pre_train_inference(dataset, validation_file, buffer_size, blocks):
 
                 return y_hat_mask, y_hat_sp, loss, mask_accuracy, label_accuracy
 
-            y_hat, y_sp, l1, a1, a2 = strategy.run(inference_step, args=(x, x_id, x_seg, y_mask, y_id, y_w, sp))
+            y_hat, y_sp, l1, a1, a2 = c.strategy.run(inference_step, args=(x, x_id, x_seg, y_mask, y_id, y_w, sp))
 
-            replicated = strategy.num_replicas_in_sync > 1
+            replicated = c.strategy.num_replicas_in_sync > 1
 
             if not replicated:
                 return y_hat, y_sp, l1, a1, a2
@@ -511,7 +507,7 @@ def pre_train_inference(dataset, validation_file, buffer_size, blocks):
 
         for b in range(blocks):
             train_dataset = load_pre_training_block(dataset, b, buffer_size)
-            train_dataset = strategy.experimental_distribute_dataset(train_dataset)
+            train_dataset = c.strategy.experimental_distribute_dataset(train_dataset)
 
             for x, x_id, x_seg, y_mask, y_id, y_w, sp in train_dataset:
                 y_hat, y_sp, l1, a1, a2 = distributed_inference_step(x, x_id, x_seg, y_mask, y_id, y_w, sp)
@@ -573,12 +569,12 @@ def fine_tune_accuracy_function(y, y_hat):
 
 
 def fine_tune_model():
-    global c, strategy, model, mask_loss, optimizer, ckpt_manager
+    global c, model, mask_loss, optimizer, ckpt_manager
 
     if not c.train or c.train_buffer_size == 0:
         return
 
-    with strategy.scope():
+    with c.strategy.scope():
 
         @tf.function
         def distributed_train_step(x, x_id, x_seg, y):
@@ -596,9 +592,9 @@ def fine_tune_model():
 
                 return loss, mask_accuracy
 
-            l1, a1 = strategy.run(per_gpu_train_step, args=(x, x_id, x_seg, y))
+            l1, a1 = c.strategy.run(per_gpu_train_step, args=(x, x_id, x_seg, y))
 
-            replicated = strategy.num_replicas_in_sync > 1
+            replicated = c.strategy.num_replicas_in_sync > 1
 
             if not replicated:
                 return l1, a1
@@ -620,9 +616,9 @@ def fine_tune_model():
 
                 return loss, mask_accuracy
 
-            l1, a1 = strategy.run(per_gpu_test_step, args=(x, x_id, x_seg, y))
+            l1, a1 = c.strategy.run(per_gpu_test_step, args=(x, x_id, x_seg, y))
 
-            replicated = strategy.num_replicas_in_sync > 1
+            replicated = c.strategy.num_replicas_in_sync > 1
 
             if not replicated:
                 return l1, a1
@@ -636,12 +632,12 @@ def fine_tune_model():
 
         def load_train_block(b_id):
             train_data = load_fine_tuning_block(c.train_data_dir, b_id, c.train_buffer_size)
-            train_dataset = strategy.experimental_distribute_dataset(train_data)
+            train_dataset = c.strategy.experimental_distribute_dataset(train_data)
             return train_dataset
 
         def load_test_block(b_id):
             test_data = load_fine_tuning_block(c.test_data_dir, b_id, c.test_buffer_size)
-            test_dataset = strategy.experimental_distribute_dataset(test_data)
+            test_dataset = c.strategy.experimental_distribute_dataset(test_data)
             return test_dataset
 
         tr_steps = (c.train_buffer_size * c.train_blocks) // c.batch_size
@@ -693,12 +689,12 @@ def fine_tune_model():
 
 
 def fine_tune_inference(dataset, validation_file, buffer_size, blocks):
-    global c, strategy, model, mask_loss, optimizer, ckpt_manager
+    global c, model, mask_loss, optimizer, ckpt_manager
 
     if not c.infer or buffer_size == 0:
         return
 
-    with strategy.scope():
+    with c.strategy.scope():
         s = open(validation_file, mode='w', encoding='utf-8')
         row_format = "{0}\t{1}\n"
         batch_format = "B={0}\tA={1}\n"
@@ -757,9 +753,9 @@ def fine_tune_inference(dataset, validation_file, buffer_size, blocks):
 
                 return y_hat, loss, mask_accuracy
 
-            y_hat, l1, a1 = strategy.run(inference_step, args=(x, x_id, x_seg, y))
+            y_hat, l1, a1 = c.strategy.run(inference_step, args=(x, x_id, x_seg, y))
 
-            replicated = strategy.num_replicas_in_sync > 1
+            replicated = c.strategy.num_replicas_in_sync > 1
 
             if not replicated:
                 return y_hat, l1, a1
@@ -774,7 +770,7 @@ def fine_tune_inference(dataset, validation_file, buffer_size, blocks):
 
         for b in range(blocks):
             train_dataset = load_fine_tuning_block(dataset, b, buffer_size)
-            train_dataset = strategy.experimental_distribute_dataset(train_dataset)
+            train_dataset = c.strategy.experimental_distribute_dataset(train_dataset)
 
             for x, x_id, x_seg, y in train_dataset:
                 y_hat, l1, a1 = distributed_inference_step(x, x_id, x_seg, y)

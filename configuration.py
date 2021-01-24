@@ -185,7 +185,7 @@ class Configuration(object):
             self.strategy = tf.distribute.TPUStrategy(resolver)
             ##
             self.b_p_gpu = int(self.batch_size / 1.0)
-            print("BATCHES_PRO_GPU = {0}".format(self.b_p_gpu))
+            print("BATCHES_TPU = {0}".format(self.b_p_gpu))
 
         def initialize_gpu():
             try:

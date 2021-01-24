@@ -173,7 +173,7 @@ class Configuration(object):
         return
 
     def initialize_strategy(self):
-        tpu, gpu = False, True
+        tpu, gpu = True, False
 
         def initialize_tpu():
             tpu_name = "tpu-demo"

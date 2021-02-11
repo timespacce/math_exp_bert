@@ -1,7 +1,7 @@
 {
   "data":      {
     "checkpoint_factor":     1,
-    "checkpoint_folder":     "checkpoints/l8_h256_io",
+    "checkpoint_folder":     "checkpoints/l12_h512_io",
     "vocab_folder":          "vocabs/sub_vocab_bert_file.txt",
     "train_data_dir":        "data/in_order_formulas/train/",
     "test_data_dir":         "data/in_order_formulas/test/",
@@ -13,24 +13,24 @@
     "vocab_size":        512,
     "max_seq_len":       256,
     "mask_prob":         0.15,
-    "num_layers":        8,
-    "hidden_size":       256,
+    "num_layers":        12,
+    "hidden_size":       512,
     "intermediate_size": 768,
     "num_heads":         4,
     "drop_rate":         0.1
   },
   "training":  {
-    "batch_size":        16,
-    "train_buffer_size": 8192,
-    "test_buffer_size":  8192,
-    "train_blocks":      1,
-    "test_blocks":       1,
-    "epochs":            0,
+    "batch_size":        512,
+    "train_buffer_size": 999936,
+    "test_buffer_size":  999936,
+    "train_blocks":      106,
+    "test_blocks":       6,
+    "epochs":            5,
     "learning_rate":     2e-5
   },
   "mode":      {
     "pre_training":    true,
-    "fine_tuning":     "GENERATIVE",
+    "fine_tuning":     "DISCRIMINATIVE",
     "reload":          true,
     "freeze":          false,
     "freeze_interval": -2
@@ -39,7 +39,7 @@
     "gpu_mode": "-1",
     "train":    true,
     "infer":    true,
-    "eager":    true,
+    "eager":    false,
     "debug":    true
   }
 }

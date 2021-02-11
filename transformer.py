@@ -35,24 +35,25 @@ class Transformer(tf.keras.Model):
         self.sm_seq = tf.keras.layers.Softmax(axis=-1)
         # CLASSIFICATION
         # self.wsp = tf.keras.layers.Dense(hidden_size, activation='tanh')
-        self.wns = tf.keras.layers.Dense(2, activation='tanh')
+        self.wns = tf.keras.layers.Dense(2)
         self.sm_ns = tf.keras.layers.Softmax(axis=-1)
         return
 
-    def classify(self, x_enc, mask_indices=None):
+    def classify(self, x_enc, mask_indices=None, mode=None):
         """
 
         Args:
             x_enc: (batch_size, sequence_len, embedding_len)
             mask_indices: (batch_size, sequence_len)
+            mode: 'GENERATIVE' or 'DISCRIMINATIVE'
 
         Returns:
 
         """
 
         # CLASSIFICATION
-        return self.pre_train_classify(x_enc=x_enc, mask_indices=mask_indices)
-        # return self.fine_tune_classify(x_enc=x_enc)
+        # return self.pre_train_classify(x_enc=x_enc, mask_indices=mask_indices)
+        return self.fine_tune_classify(x_enc=x_enc, mode=mode)
 
     def pre_train_classify(self, x_enc, mask_indices):
         """
@@ -81,27 +82,29 @@ class Transformer(tf.keras.Model):
         ##
         return y_hat_mask, y_hat_sp
 
-    def fine_tune_classify(self, x_enc):
+    def fine_tune_classify(self, x_enc, mode):
         """
 
         Args:
             x_enc: (batch_size, sequence_len, embedding_len)
+            mode: 'GENERATIVE' or 'DISCRIMINATIVE'
 
         Returns:
 
         """
+        y_hat = x_enc
 
-        # CLASSIFICATION GENERATIVE
-        # y_hat = x_enc[:, :13, :]
-        # y_hat = tf.matmul(y_hat, self.bert_embedding.get_word_embeddings(), transpose_b=True)  # (batch_size, 2, dictionary_len)
-        # y_hat = self.sm_seq(y_hat)  # (batch_size, mask_len, dictionary_len)
+        if mode == 'GENERATIVE':
+            word_embedding_weights = self.bert_embedding.get_word_embeddings()
+            y_hat = tf.matmul(y_hat, word_embedding_weights, transpose_b=True)  # (batch_size, sequence_len, dictionary_len)
+            y_hat = self.sm_seq(y_hat)  # (batch_size, sequence_len, dictionary_len)
 
-        # CLASSIFICATION DISCRIMINATIVE
-        y_hat_dc = x_enc[:, 0:1, :]  # (batch_size, 1, hidden_size)
-        # y_hat_dc = tf.squeeze(y_hat_dc, axis=1)  # (batch_size, hidden_size)
-        y_hat_dc = self.wns(y_hat_dc)  # (batch_size, 1, 2)
-        y_hat_dc = self.sm_ns(y_hat_dc)  # (batch_size, 1, 2)
-        return y_hat_dc
+        if mode == 'DISCRIMINATIVE':
+            y_hat = y_hat[:, 0:1, :]  # (batch_size, 1, hidden_size)
+            y_hat = self.wns(y_hat)  # (batch_size, 1, 2)
+            y_hat = self.sm_ns(y_hat)  # (batch_size, 1, 2)
+
+        return y_hat
 
     def call(self, in_seq, enc_padding_mask, in_seg):
         """

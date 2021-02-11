@@ -17,9 +17,8 @@ token_loss_func = None
 sp_loss_func = None
 mask_loss = None
 
-#
 
-mode = 'DISCRIMINATIVE'
+#
 
 
 def printf(template, *args):
@@ -100,6 +99,8 @@ def build_model():
 
         if c.freeze:
             for layer in model.layers[:c.freeze_interval]:
+                layer.trainable = False
+            for layer in model.layers[c.freeze_interval:]:
                 layer.trainable = True
 
         token_loss_func = tf.keras.losses.CategoricalCrossentropy(reduction='none')
@@ -272,11 +273,10 @@ def load_fine_tuning_block(target, block_id, buffer_size):
     xs_seg_s.close()
 
     b = ys_s.read()
-    # b_s = c.max_mask_len * count
-    b_s = 1 * count
+    b_s = c.max_seq_len * count if c.fine_tuning == 'GENERATIVE' else 1 * count
+    ys_shape = (-1, c.max_seq_len) if c.fine_tuning == 'GENERATIVE' else (-1, 1)
     ys = np.frombuffer(buffer=b, count=b_s, dtype=np.int32)
-    # ys = ys.reshape((-1, c.max_mask_len))
-    ys = ys.reshape((-1, 1))
+    ys = ys.reshape(ys_shape)
     ys_s.close()
 
     if xs.shape[0] != xs_id.shape[0] != xs_seg.shape[0]:
@@ -539,29 +539,34 @@ def pre_train_inference(dataset, validation_file, buffer_size, blocks):
 def fine_tune_loss_function(y, y_hat):
     global c, token_loss_func, sp_loss_func
 
-    if mode == 'GENERATIVE':
-        tokens = tf.one_hot(y, c.vocab_size, dtype=tf.float32)
-        token_loss_ps = token_loss_func(tokens, y_hat)
-        token_loss_ps = tf.reduce_sum(token_loss_ps)
-        return token_loss_ps
+    token_loss_ps = None
 
-    if mode == 'DISCRIMINATIVE':
+    if c.fine_tuning == 'GENERATIVE':
+        tokens = tf.one_hot(y, c.vocab_size, dtype=tf.float32)
+        token_loss_ps = token_loss_func(tokens[:, :13, :], y_hat[:, :13, :])
+        token_loss_ps = tf.reduce_sum(token_loss_ps, axis=1)
+        token_loss_ps = tf.reduce_mean(token_loss_ps)
+
+    if c.fine_tuning == 'DISCRIMINATIVE':
         dc = tf.one_hot(y, 2, dtype=tf.float32)
-        dc_loss_ps = sp_loss_func(dc, y_hat)
-        dc_loss_ps = tf.reduce_sum(dc_loss_ps)
-        return dc_loss_ps
+        token_loss_ps = sp_loss_func(dc, y_hat)
+        token_loss_ps = tf.reduce_sum(token_loss_ps)
+
+    return token_loss_ps
 
 
 def fine_tune_accuracy_function(y, y_hat):
-    if mode == 'GENERATIVE':
-        tokens = tf.cast(tf.argmax(y_hat, 2), dtype=tf.float32)
-        y_mask = tf.cast(y, tf.float32)
+    global c
+
+    if c.fine_tuning == 'GENERATIVE':
+        tokens = tf.cast(tf.argmax(y_hat[:, :13, :], 2), dtype=tf.float32)
+        y_mask = tf.cast(y[:, :13], tf.float32)
         y_error = tf.abs(tokens - y_mask)
         y_error = y_error / (y_error + 1e-15)
         y_error = 1 - tf.reduce_mean(y_error)
         return y_error
 
-    if mode == 'DISCRIMINATIVE':
+    if c.fine_tuning == 'DISCRIMINATIVE':
         y_dc = tf.one_hot(y, 2, dtype=tf.float32)
         alpha = tf.reduce_mean(tf.abs(tf.round(y_hat) - y_dc))
         dc_accuracy = 1 - alpha
@@ -583,7 +588,7 @@ def fine_tune_model():
 
                 with tf.GradientTape() as tape:
                     x_enc = model(x, enc_padding_mask, x_seg)
-                    y_hat = model.fine_tune_classify(x_enc)
+                    y_hat = model.classify(x_enc=x_enc, mode=c.fine_tuning)
                     loss = fine_tune_loss_function(y=y, y_hat=y_hat)
                     mask_accuracy = fine_tune_accuracy_function(y=y, y_hat=y_hat)
 
@@ -610,7 +615,7 @@ def fine_tune_model():
                 enc_padding_mask = create_mask(x_id)
 
                 x_enc = model(x, enc_padding_mask, x_seg)
-                y_hat = model.classify(x_enc)
+                y_hat = model.classify(x_enc=x_enc, mode=c.fine_tuning)
                 loss = fine_tune_loss_function(y=y, y_hat=y_hat)
                 mask_accuracy = fine_tune_accuracy_function(y=y, y_hat=y_hat)
 
@@ -628,7 +633,7 @@ def fine_tune_model():
 
             return acc_l1, acc_a1
 
-        template = '\n E: {} ({:.2f}%) | Loss: {:.4f} {:.4f} | Mask [{:.4f}, {:.4f}] | delta = {:.2f} \n'
+        template = 'E: {} ({:.2f}%) | Loss: {:.4f} {:.4f} | Mask [{:.4f}, {:.4f}] | delta = {:.2f} \n'
 
         def load_train_block(b_id):
             train_data = load_fine_tuning_block(c.train_data_dir, b_id, c.train_buffer_size)
@@ -703,8 +708,8 @@ def fine_tune_inference(dataset, validation_file, buffer_size, blocks):
             if not c.debug:
                 return 0, 0, 0, 0
 
-            y_hat_max = np.int32(tf.argmax(y_hat, axis=2).numpy())
-            y_max = np.int32(y.numpy())
+            y_hat_max = np.int32(tf.argmax(y_hat, axis=2).numpy())[:, :13]
+            y_max = np.int32(y.numpy())[:, :13]
             mask_accuracy = a1.numpy()
 
             batch_content = batch_format.format(batch, mask_accuracy)
@@ -747,7 +752,7 @@ def fine_tune_inference(dataset, validation_file, buffer_size, blocks):
                 enc_padding_mask = create_mask(x_id)
 
                 x_enc = model(x, enc_padding_mask, x_seg)
-                y_hat = model.fine_tune_classify(x_enc)
+                y_hat = model.fine_tune_classify(x_enc=x_enc, mode=c.fine_tuning)
                 loss = fine_tune_loss_function(y=y, y_hat=y_hat)
                 mask_accuracy = fine_tune_accuracy_function(y=y, y_hat=y_hat)
 
@@ -778,9 +783,9 @@ def fine_tune_inference(dataset, validation_file, buffer_size, blocks):
                 l1_mu, a1_mu = l1_acc / batch, a1_acc / batch
                 percent = 1e2 * (batch / steps)
 
-                if mode == 'GENERATIVE':
+                if c.fine_tuning == 'GENERATIVE':
                     persist_generative(batch, y_hat, y, a1)
-                if mode == 'DISCRIMINATIVE':
+                if c.fine_tuning == 'DISCRIMINATIVE':
                     persist_discriminative(batch, y_hat, y, a1)
 
                 printf("INFERENCE : {} ({:.3}%) L1 = {:.4} A1 = {:.4}", batch, percent, l1_mu, a1_mu)

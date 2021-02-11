@@ -48,6 +48,7 @@ class Configuration(object):
 
     # mode
     pre_training = None
+    fine_tuning = None
     reload = None
     freeze = None
     freeze_interval = None
@@ -150,6 +151,8 @@ class Configuration(object):
         # mode
         self.pre_training = self.configuration["mode"]["pre_training"]
         print("PRE_TRAINING = {}".format(self.pre_training))
+        self.fine_tuning = self.configuration["mode"]["fine_tuning"]
+        print("FINE_TUNING = {}".format(self.fine_tuning))
         self.reload = self.configuration["mode"]["reload"]
         print("RELOAD = {}".format(self.reload))
         self.freeze = self.configuration["mode"]["freeze"]
@@ -173,7 +176,7 @@ class Configuration(object):
         return
 
     def initialize_strategy(self):
-        tpu, gpu = True, False
+        tpu, gpu = False, True
 
         def initialize_tpu():
             tpu_name = "tpu-demo"

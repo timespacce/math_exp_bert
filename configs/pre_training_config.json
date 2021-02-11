@@ -30,6 +30,7 @@
   },
   "mode":      {
     "pre_training":    true,
+    "fine_tuning":     "DISCRIMINATIVE",
     "reload":          true,
     "freeze":          false,
     "freeze_interval": -2

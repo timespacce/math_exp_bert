@@ -104,6 +104,9 @@ class Transformer(tf.keras.Model):
             y_hat = self.wns(y_hat)  # (batch_size, 1, 2)
             y_hat = self.sm_ns(y_hat)  # (batch_size, 1, 2)
 
+        if mode == 'EQUALITY':
+            y_hat = tf.gather(y_hat, 0, axis=1)  # (batch_size, 1, hidden_size)
+
         return y_hat
 
     def call(self, in_seq, enc_padding_mask, in_seg):

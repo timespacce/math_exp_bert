@@ -1,15 +1,16 @@
-import os
 import sys
 import time
 import numpy as np
 import tensorflow as tf
 from configuration import Configuration
+from data_loader import DataLoader
 from optimization import LearningRateScheduler, CustomOptimizer
 from transformer import Transformer
 
-c = None
+c: Configuration = None
 
-model = None
+model: tf.keras.Model = None
+data_loader: DataLoader = None
 optimizer = None
 ckpt_manager = None
 
@@ -71,13 +72,13 @@ def accuracy_function(y_mask, y_mask_w, y_hat_mask, y_sp, y_hat_sp):
 
 
 def load_configuration():
-    global c
+    global c, data_loader
     if len(sys.argv) < 2:
         print("CONFIGURATION-FILE is expected as first argument.")
         exit(1)
     configuration_file = sys.argv[1]
     c = Configuration(configuration_file)
-
+    data_loader = DataLoader(c)
     return
 
 
@@ -132,182 +133,10 @@ def build_model():
     return
 
 
-def load_pre_training_block(target, block_id, buffer_size):
-    global c
-
-    begin = time.time()
-
-    prefix = target + "block_{0}/".format(block_id)
-    x_file = prefix + c.x_file
-    x_id_file = prefix + c.x_id_file
-    x_seg_file = prefix + c.x_seg_file
-    y_mask_file = prefix + c.y_mask_file
-    y_id_file = prefix + c.y_id_file
-    y_w_file = prefix + c.y_w_file
-    sp_file = prefix + c.sp_file
-
-    size = os.path.getsize(sp_file)
-    count = size // 4
-    count = np.minimum(count, buffer_size)
-    count = (count // c.batch_size) * c.batch_size
-
-    xs_s = open(x_file, 'rb')
-    xs_id_s = open(x_id_file, 'rb')
-    xs_seg_s = open(x_seg_file, 'rb')
-    ys_mask_s = open(y_mask_file, 'rb')
-    ys_id_s = open(y_id_file, 'rb')
-    ys_w_s = open(y_w_file, 'rb')
-    sps_s = open(sp_file, 'rb')
-
-    b = xs_s.read()
-    b_s = c.max_seq_len * count
-    xs = np.frombuffer(buffer=b, count=b_s, dtype=np.float32)
-    xs = xs.reshape((-1, c.max_seq_len))
-    xs_s.close()
-
-    b = xs_id_s.read()
-    b_s = c.max_seq_len * count
-    xs_id = np.frombuffer(buffer=b, count=b_s, dtype=np.float32)
-    xs_id = xs_id.reshape((-1, c.max_seq_len))
-    xs_id_s.close()
-
-    b = xs_seg_s.read()
-    b_s = c.max_seq_len * count
-    xs_seg = np.frombuffer(buffer=b, count=b_s, dtype=np.int32)
-    xs_seg = xs_seg.reshape((-1, c.max_seq_len))
-    xs_seg_s.close()
-
-    b = ys_mask_s.read()
-    b_s = c.max_mask_len * count
-    ys_mask = np.frombuffer(buffer=b, count=b_s, dtype=np.int32)
-    ys_mask = ys_mask.reshape((-1, c.max_mask_len))
-    ys_mask_s.close()
-
-    b = ys_id_s.read()
-    b_s = c.max_mask_len * count
-    ys_id = np.frombuffer(buffer=b, count=b_s, dtype=np.int32)
-    ys_id = ys_id.reshape((-1, c.max_mask_len))
-    ys_id_s.close()
-
-    b = ys_w_s.read()
-    b_s = c.max_mask_len * count
-    ys_w = np.frombuffer(buffer=b, count=b_s, dtype=np.float32)
-    ys_w = ys_w.reshape((-1, c.max_mask_len))
-    ys_w_s.close()
-
-    b = sps_s.read()
-    b_s = count
-    sps = np.frombuffer(buffer=b, count=b_s, dtype=np.int32)
-    sps = sps.reshape((-1,))
-    sps_s.close()
-
-    if xs.shape[0] != xs_id.shape[0] != xs_seg.shape[0]:
-        print("XS LEN is not correct.")
-        exit()
-
-    if ys_mask.shape[0] != ys_id.shape[0] != ys_w.shape[0]:
-        print("YS LEN is not correct.")
-        exit()
-
-    if sps.shape[0] != count:
-        print("SP LEN is not correct.")
-        exit()
-
-    tf_xs = tf.data.Dataset.from_tensor_slices(xs)
-    tf_xs_id = tf.data.Dataset.from_tensor_slices(xs_id)
-    tf_xs_seg = tf.data.Dataset.from_tensor_slices(xs_seg)
-    tf_ys_mask = tf.data.Dataset.from_tensor_slices(ys_mask)
-    tf_ys_id = tf.data.Dataset.from_tensor_slices(ys_id)
-    tf_ys_w = tf.data.Dataset.from_tensor_slices(ys_w)
-    tf_sps = tf.data.Dataset.from_tensor_slices(sps)
-
-    tf_dataset = tf.data.Dataset.zip((tf_xs, tf_xs_id, tf_xs_seg, tf_ys_mask, tf_ys_id, tf_ys_w, tf_sps))
-    tf_dataset = tf_dataset.shuffle(buffer_size=count, reshuffle_each_iteration=True)
-    tf_dataset = tf_dataset.batch(batch_size=c.batch_size)
-
-    runtime = time.time() - begin
-
-    if c.debug:
-        print("BLOCK_{0} with {1} in {2:.3} s.".format(block_id, count, runtime))
-
-    return tf_dataset
-
-
-def load_fine_tuning_block(target, block_id, buffer_size):
-    global c
-
-    begin = time.time()
-
-    prefix = target + "block_{0}/".format(block_id)
-    x_file = prefix + c.x_file
-    x_id_file = prefix + c.x_id_file
-    x_seg_file = prefix + c.x_seg_file
-    y_file = prefix + c.y_file
-
-    size = os.path.getsize(x_file)
-    count = size // (4 * c.max_seq_len)
-    count = np.minimum(count, buffer_size)
-    count = (count // c.batch_size) * c.batch_size
-
-    xs_s = open(x_file, 'rb')
-    xs_id_s = open(x_id_file, 'rb')
-    xs_seg_s = open(x_seg_file, 'rb')
-    ys_s = open(y_file, 'rb')
-
-    b = xs_s.read()
-    b_s = c.max_seq_len * count
-    xs = np.frombuffer(buffer=b, count=b_s, dtype=np.float32)
-    xs = xs.reshape((-1, c.max_seq_len))
-    xs_s.close()
-
-    b = xs_id_s.read()
-    b_s = c.max_seq_len * count
-    xs_id = np.frombuffer(buffer=b, count=b_s, dtype=np.float32)
-    xs_id = xs_id.reshape((-1, c.max_seq_len))
-    xs_id_s.close()
-
-    b = xs_seg_s.read()
-    b_s = c.max_seq_len * count
-    xs_seg = np.frombuffer(buffer=b, count=b_s, dtype=np.int32)
-    xs_seg = xs_seg.reshape((-1, c.max_seq_len))
-    xs_seg_s.close()
-
-    b = ys_s.read()
-    b_s = c.max_seq_len * count if c.fine_tuning == 'GENERATIVE' else 1 * count
-    ys_shape = (-1, c.max_seq_len) if c.fine_tuning == 'GENERATIVE' else (-1, 1)
-    ys = np.frombuffer(buffer=b, count=b_s, dtype=np.int32)
-    ys = ys.reshape(ys_shape)
-    ys_s.close()
-
-    if xs.shape[0] != xs_id.shape[0] != xs_seg.shape[0]:
-        print("XS LEN is not correct.")
-        exit()
-
-    if ys.shape[0] != count:
-        print("DC LEN is not correct.")
-        exit()
-
-    tf_xs = tf.data.Dataset.from_tensor_slices(xs)
-    tf_xs_id = tf.data.Dataset.from_tensor_slices(xs_id)
-    tf_xs_seg = tf.data.Dataset.from_tensor_slices(xs_seg)
-    tf_ys = tf.data.Dataset.from_tensor_slices(ys)
-
-    tf_dataset = tf.data.Dataset.zip((tf_xs, tf_xs_id, tf_xs_seg, tf_ys))
-    tf_dataset = tf_dataset.shuffle(buffer_size=count, reshuffle_each_iteration=True)
-    tf_dataset = tf_dataset.batch(batch_size=c.batch_size)
-
-    runtime = time.time() - begin
-
-    if c.debug:
-        print("BLOCK_{0} with {1} in {2:.3} s.".format(block_id, count, runtime))
-
-    return tf_dataset
-
-
 ##
 
 def pre_train_model():
-    global c, model, mask_loss, optimizer, ckpt_manager
+    global c, model, data_loader, mask_loss, optimizer, ckpt_manager
 
     if not c.train or c.train_buffer_size == 0:
         return
@@ -371,12 +200,12 @@ def pre_train_model():
         template = '\n E: {} ({:.2f}%) | Loss: [{:.4f}, {:.4f}] | Mask / Label Acc: [{:.4f}, {:.4f}, {:.4f}, {:.4f}] | delta = {:.2f} \n'
 
         def load_train_block(b_id):
-            train_data = load_pre_training_block(c.train_data_dir, b_id, c.train_buffer_size)
+            train_data = data_loader.load_data_block(c.train_data_dir, b_id, c.train_buffer_size)
             train_dataset = c.strategy.experimental_distribute_dataset(train_data)
             return train_dataset
 
         def load_test_block(b_id):
-            test_data = load_pre_training_block(c.test_data_dir, b_id, c.test_buffer_size)
+            test_data = data_loader.load_data_block(c.test_data_dir, b_id, c.test_buffer_size)
             test_dataset = c.strategy.experimental_distribute_dataset(test_data)
             return test_dataset
 
@@ -429,7 +258,7 @@ def pre_train_model():
 
 
 def pre_train_inference(dataset, validation_file, buffer_size, blocks):
-    global c, model, mask_loss, optimizer, ckpt_manager
+    global c, model, data_loader, mask_loss, optimizer, ckpt_manager
 
     if not c.infer or buffer_size == 0:
         return
@@ -506,7 +335,7 @@ def pre_train_inference(dataset, validation_file, buffer_size, blocks):
         batch, sp_count, sp_acc, n_sp_count, n_sp_acc = 0, 1e-7, 0, 1e-7, 0
 
         for b in range(blocks):
-            train_dataset = load_pre_training_block(dataset, b, buffer_size)
+            train_dataset = data_loader.load_data_block(dataset, b, buffer_size)
             train_dataset = c.strategy.experimental_distribute_dataset(train_dataset)
 
             for x, x_id, x_seg, y_mask, y_id, y_w, sp in train_dataset:
@@ -552,6 +381,14 @@ def fine_tune_loss_function(y, y_hat):
         token_loss_ps = sp_loss_func(dc, y_hat)
         token_loss_ps = tf.reduce_sum(token_loss_ps)
 
+    if c.fine_tuning == 'EQUALITY':
+        y_hat_left, y_hat_right = tf.gather(y_hat, np.arange(c.batch_size)[0::2]), tf.gather(y_hat, np.arange(c.batch_size)[1::2])
+        product = tf.matmul(y_hat_left, y_hat_right, transpose_b=True)
+        labels = tf.eye(c.batch_size // 2)
+        product = tf.nn.softmax(product, axis=1)
+        contrastive_loss = sp_loss_func(labels, product)
+        token_loss_ps = tf.reduce_mean(contrastive_loss)
+
     return token_loss_ps
 
 
@@ -572,9 +409,21 @@ def fine_tune_accuracy_function(y, y_hat):
         dc_accuracy = 1 - alpha
         return dc_accuracy
 
+    if c.fine_tuning == 'EQUALITY':
+        y_hat_left, y_hat_right = tf.gather(y_hat, np.arange(c.batch_size)[0::2]), tf.gather(y_hat, np.arange(c.batch_size)[1::2])
+        product = tf.matmul(y_hat_left, y_hat_right, transpose_b=True)
+        product = tf.nn.softmax(product, axis=1)
+        labels = tf.eye(c.batch_size // 2)
+        one_hot = tf.round(product)
+        pro_sample_diff = tf.reduce_sum(tf.abs(one_hot - labels), axis=1)
+        pro_sample_diff = pro_sample_diff / (c.batch_size // 2)
+        alpha = tf.reduce_mean(pro_sample_diff)
+        dc_accuracy = 1 - alpha
+        return dc_accuracy
 
-def fine_tune_model():
-    global c, model, mask_loss, optimizer, ckpt_manager
+
+def fine_tune_derivation_model():
+    global c, model, data_loader, mask_loss, optimizer, ckpt_manager
 
     if not c.train or c.train_buffer_size == 0:
         return
@@ -636,12 +485,12 @@ def fine_tune_model():
         template = 'E: {} ({:.2f}%) | Loss: {:.4f} {:.4f} | Mask [{:.4f}, {:.4f}] | delta = {:.2f} \n'
 
         def load_train_block(b_id):
-            train_data = load_fine_tuning_block(c.train_data_dir, b_id, c.train_buffer_size)
+            train_data = data_loader.load_data_block(c.train_data_dir, b_id, c.train_buffer_size)
             train_dataset = c.strategy.experimental_distribute_dataset(train_data)
             return train_dataset
 
         def load_test_block(b_id):
-            test_data = load_fine_tuning_block(c.test_data_dir, b_id, c.test_buffer_size)
+            test_data = data_loader.load_data_block(c.test_data_dir, b_id, c.test_buffer_size)
             test_dataset = c.strategy.experimental_distribute_dataset(test_data)
             return test_dataset
 
@@ -693,8 +542,8 @@ def fine_tune_model():
     return
 
 
-def fine_tune_inference(dataset, validation_file, buffer_size, blocks):
-    global c, model, mask_loss, optimizer, ckpt_manager
+def fine_tune_derivation_inference(dataset, validation_file, buffer_size, blocks):
+    global c, model, data_loader, mask_loss, optimizer, ckpt_manager
 
     if not c.infer or buffer_size == 0:
         return
@@ -774,7 +623,7 @@ def fine_tune_inference(dataset, validation_file, buffer_size, blocks):
         batch = 0
 
         for b in range(blocks):
-            train_dataset = load_fine_tuning_block(dataset, b, buffer_size)
+            train_dataset = data_loader.load_data_block(dataset, b, buffer_size)
             train_dataset = c.strategy.experimental_distribute_dataset(train_dataset)
 
             for x, x_id, x_seg, y in train_dataset:
@@ -803,19 +652,216 @@ def fine_tune_inference(dataset, validation_file, buffer_size, blocks):
 
 ##
 
+def fine_tune_equality_model():
+    global c, model, data_loader, mask_loss, optimizer, ckpt_manager
+
+    if not c.train or c.train_buffer_size == 0:
+        return
+
+    with c.strategy.scope():
+
+        @tf.function
+        def distributed_train_step(xlr, xlr_id, xlr_seg):
+            def per_gpu_train_step(xlr, xlr_id, xlr_seg):
+                enc_padding_mask = create_mask(xlr_id)
+
+                with tf.GradientTape() as tape:
+                    x_enc = model(xlr, enc_padding_mask, xlr_seg)
+                    y_hat = model.fine_tune_classify(x_enc=x_enc, mode=c.fine_tuning)
+                    loss = fine_tune_loss_function(y=None, y_hat=y_hat)
+                    mask_accuracy = fine_tune_accuracy_function(y=None, y_hat=y_hat)
+
+                gradients = tape.gradient(loss, model.trainable_variables)
+                optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+
+                return loss, mask_accuracy
+
+            l1, a1 = c.strategy.run(per_gpu_train_step, args=(xlr, xlr_id, xlr_seg))
+
+            replicated = c.strategy.num_replicas_in_sync > 1
+
+            if not replicated:
+                return l1, a1
+
+            acc_l1 = tf.reduce_sum(l1.values, axis=-1) / c.strategy.num_replicas_in_sync
+            acc_a1 = tf.reduce_sum(a1.values, axis=-1) / c.strategy.num_replicas_in_sync
+
+            return acc_l1, acc_a1
+
+        @tf.function
+        def distributed_test_step(xlr, xlr_id, xlr_seg):
+            enc_padding_mask = create_mask(xlr_id)
+
+            def per_gpu_test_step(xlr, enc_padding_mask, xlr_seg):
+                x_enc = model(xlr, enc_padding_mask, xlr_seg)
+                y_hat = model.fine_tune_classify(x_enc=x_enc, mode=c.fine_tuning)
+                loss = fine_tune_loss_function(y=None, y_hat=y_hat)
+                mask_accuracy = fine_tune_accuracy_function(y=None, y_hat=y_hat)
+
+                return loss, mask_accuracy
+
+            l1, a1 = c.strategy.run(per_gpu_test_step, args=(xlr, xlr_id, xlr_seg))
+
+            replicated = c.strategy.num_replicas_in_sync > 1
+
+            if not replicated:
+                return l1, a1
+
+            acc_l1 = tf.reduce_sum(l1.values, axis=-1) / c.strategy.num_replicas_in_sync
+            acc_a1 = tf.reduce_sum(a1.values, axis=-1) / c.strategy.num_replicas_in_sync
+
+            return acc_l1, acc_a1
+
+        template = 'E: {} ({:.2f}%) | Loss: {:.4f} {:.4f} | Mask [{:.4f}, {:.4f}] | delta = {:.2f} \n'
+
+        def load_train_block(b_id):
+            train_data = data_loader.load_data_block(c.train_data_dir, b_id, c.train_buffer_size)
+            train_dataset = c.strategy.experimental_distribute_dataset(train_data)
+            return train_dataset
+
+        def load_test_block(b_id):
+            test_data = data_loader.load_data_block(c.test_data_dir, b_id, c.test_buffer_size)
+            test_dataset = c.strategy.experimental_distribute_dataset(test_data)
+            return test_dataset
+
+        tr_steps = (c.train_buffer_size * c.train_blocks) // c.batch_size
+        va_steps = (c.test_buffer_size * c.test_blocks) // c.batch_size
+
+        tf_train_dataset, tf_test_dataset = None, None
+
+        for e in range(c.epochs):
+            start = time.time()
+            tr_l1_acc, tr_a1_acc, tr_step = 0, 0, 0
+
+            for block_id in range(c.train_blocks):
+                if c.train_blocks > 1:
+                    tf_train_dataset = load_train_block(block_id)
+                else:
+                    if e <= 0:
+                        tf_train_dataset = load_train_block(block_id)
+
+                for (xlr, xlr_id, xlr_seg) in tf_train_dataset:
+                    l1, a1 = distributed_train_step(xlr, xlr_id, xlr_seg)
+                    tr_l1_acc, tr_a1_acc, tr_step = tr_l1_acc + l1, tr_a1_acc + a1, tr_step + 1
+                    l1_mu, a1_mu = tr_l1_acc / tr_step, tr_a1_acc / tr_step
+                    percent = 1e2 * (tr_step / tr_steps)
+                    printf("TRAINING : {} {} ({:.3}%) L1 = {:.4} A1 = {:.4}", block_id, tr_step, percent, l1_mu, a1_mu)
+
+            if e <= 0:
+                tf_test_dataset = load_test_block(0)
+
+            va_l1_acc, va_a1_acc, va_step = 0, 0, 0
+
+            for (xlr, xlr_id, xlr_seg) in tf_test_dataset:
+                l1, a1 = distributed_train_step(xlr, xlr_id, xlr_seg)
+                va_l1_acc, va_a1_acc, va_step = va_l1_acc + l1, va_a1_acc + a1, va_step + 1
+                l1_mu, a1_mu = va_l1_acc / va_step, va_a1_acc / va_step
+                percent = 1e2 * (va_step / va_steps)
+                printf("VALIDATION : {} ({:.3}%) L1 = {:.4} A1 = {:.4}", va_step, percent, l1_mu, a1_mu)
+
+            tr_l1_acc, tr_a1_acc = tr_l1_acc / tr_step, tr_a1_acc / tr_step
+            va_l1_acc, va_a1_acc = va_l1_acc / va_step, va_a1_acc / va_step
+
+            delta, percent = time.time() - start, (e / c.epochs) * 1e2
+            printf(template.format(e, percent, tr_l1_acc, va_l1_acc, tr_a1_acc, va_a1_acc, delta))
+
+            # if (e + 1) % c.checkpoint_factor == 0:
+            #     ckpt_save_path = ckpt_manager.save()
+            #     print('Saving checkpoint for epoch {} at {}'.format(e + 1, ckpt_save_path))
+
+    return
+
+
+def fine_tune_equality_inference(dataset, validation_file, buffer_size, blocks):
+    global c, model, data_loader, mask_loss, optimizer, ckpt_manager
+
+    if not c.infer or buffer_size == 0:
+        return
+
+    with c.strategy.scope():
+        s = open(validation_file, mode='w', encoding='utf-8')
+        row_format = "{0}\t{1}\n"
+        batch_format = "B={0}\tA={1}\n"
+
+        def persist_equality(batch, y_hat):
+            return
+
+        @tf.function
+        def distributed_inference_step(xlr, xlr_id, xlr_seg):
+            def inference_step(xlr, xlr_id, xlr_seg):
+                enc_padding_mask = create_mask(xlr_id)
+                x_enc = model(xlr, enc_padding_mask, xlr_seg)
+                y_hat = model.fine_tune_classify(x_enc=x_enc, mode=c.fine_tuning)
+                loss = fine_tune_loss_function(y=None, y_hat=y_hat)
+                mask_accuracy = fine_tune_accuracy_function(y=None, y_hat=y_hat)
+                return y_hat, loss, mask_accuracy
+
+            y_hat, l1, a1 = c.strategy.run(inference_step, args=(xlr, xlr_id, xlr_seg))
+
+            replicated = c.strategy.num_replicas_in_sync > 1
+
+            if not replicated:
+                return y_hat, l1, a1
+
+            acc_l1 = tf.reduce_sum(l1.values, axis=-1) / c.gpu_count
+            acc_a1 = tf.reduce_sum(a1.values, axis=-1) / c.gpu_count
+
+            return y_hat, acc_l1, acc_a1
+
+        l1_acc, a1_acc, steps = 0, 0, (buffer_size * blocks) // c.batch_size
+        batch = 0
+
+        for b in range(blocks):
+            train_dataset = data_loader.load_data_block(dataset, b, buffer_size)
+            train_dataset = c.strategy.experimental_distribute_dataset(train_dataset)
+
+            for xlr, xlr_id, xlr_seg in train_dataset:
+                y_hat, l1, a1 = distributed_inference_step(xlr, xlr_id, xlr_seg)
+                l1_acc, a1_acc, batch = l1_acc + l1, a1_acc + a1, batch + 1
+                l1_mu, a1_mu = l1_acc / batch, a1_acc / batch
+                percent = 1e2 * (batch / steps)
+                #
+                persist_equality(batch, y_hat)
+                #
+                printf("INFERENCE : {} ({:.3}%) L1 = {:.4} A1 = {:.4}", batch, percent, l1_mu, a1_mu)
+
+        l1_acc, a1_acc = l1_acc / batch, a1_acc / batch
+
+        footer_format = "\nTEST : L1 = {:.4} : A1 = {:.4}"
+        footer = footer_format.format(l1_acc, a1_acc)
+        s.write(footer)
+        print(footer)
+        s.close()
+
+    return
+
+
+##
+
 
 def run_bert():
     global c
     load_configuration()
     build_model()
+
     if c.pre_training:
         pre_train_model()
         pre_train_inference(c.train_data_dir, c.train_validation_file, c.train_buffer_size, c.train_blocks)
         pre_train_inference(c.test_data_dir, c.test_validation_file, c.test_buffer_size, c.test_blocks)
-    else:
-        fine_tune_model()
-        fine_tune_inference(c.train_data_dir, c.train_validation_file, c.train_buffer_size, c.train_blocks)
-        fine_tune_inference(c.test_data_dir, c.test_validation_file, c.test_buffer_size, c.test_blocks)
+        return
+
+    if c.fine_tuning == 'DISCRIMINATIVE' or c.fine_tuning == 'GENERATIVE':
+        fine_tune_derivation_model()
+        fine_tune_derivation_inference(c.train_data_dir, c.train_validation_file, c.train_buffer_size, c.train_blocks)
+        fine_tune_derivation_inference(c.test_data_dir, c.test_validation_file, c.test_buffer_size, c.test_blocks)
+        return
+
+    if c.fine_tuning == 'EQUALITY':
+        fine_tune_equality_model()
+        fine_tune_equality_inference(c.train_data_dir, c.train_validation_file, c.train_buffer_size, c.train_blocks)
+        fine_tune_equality_inference(c.test_data_dir, c.test_validation_file, c.test_buffer_size, c.test_blocks)
+        return
+
     return
 
 

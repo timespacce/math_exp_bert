@@ -808,7 +808,7 @@ def fine_tune_equality_inference(dataset, validation_file, buffer_size, blocks):
 
             return y_hat, acc_l1, acc_a1
 
-        l1_acc, a1_acc, steps = 0, 0, (buffer_size * blocks) // c.batch_size
+        l1_acc, a1_acc, steps = 0, 0, (2 * buffer_size * blocks) // c.batch_size
         batch = 0
 
         for b in range(blocks):

@@ -416,7 +416,7 @@ def fine_tune_accuracy_function(y, y_hat):
         labels = tf.eye(c.batch_size // 2)
         one_hot = tf.round(product)
         pro_sample_diff = tf.reduce_sum(tf.abs(one_hot - labels), axis=1)
-        pro_sample_diff = pro_sample_diff / (c.batch_size // 2)
+        pro_sample_diff = pro_sample_diff / 2
         alpha = tf.reduce_mean(pro_sample_diff)
         dc_accuracy = 1 - alpha
         return dc_accuracy

@@ -724,8 +724,8 @@ def fine_tune_equality_model():
             test_dataset = c.strategy.experimental_distribute_dataset(test_data)
             return test_dataset
 
-        tr_steps = (c.train_buffer_size * c.train_blocks) // c.batch_size
-        va_steps = (c.test_buffer_size * c.test_blocks) // c.batch_size
+        tr_steps = (2 * c.train_buffer_size * c.train_blocks) // c.batch_size
+        va_steps = (2 * c.test_buffer_size * c.test_blocks) // c.batch_size
 
         tf_train_dataset, tf_test_dataset = None, None
 

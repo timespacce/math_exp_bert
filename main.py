@@ -851,9 +851,9 @@ def fine_tune_equality_inference(dataset, validation_file, buffer_size, blocks):
         recall_at_1 = (ranks < 1).sum() / (1.0 * len(ranks) + fail)  # correct answer among the first 1
         recall_at_10 = (ranks < 10).sum() / (1.0 * len(ranks) + fail)  # correct answer among the first 10
         recall_at_100 = (ranks < 100).sum() / (1.0 * len(ranks) + fail)  # correct answer among the first 100
+        rank_format = "RANKS: mean {0:.3}, fails {1}, recall@1 {2:.3}, recall@10 {3:.3} recall@100 {4:.3}"
         print("")
-        print("RANKS: mean {}, fails {}, recall@1 {}, recall@10 {} recall@100 {}".format(ranks.mean(), fail, recall_at_1, recall_at_10,
-                                                                                         recall_at_100))
+        print(rank_format.format(ranks.mean(), fail, recall_at_1, recall_at_10, recall_at_100))
 
         ##
         l1_acc, a1_acc = l1_acc / batch, a1_acc / batch

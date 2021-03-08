@@ -383,7 +383,7 @@ def fine_tune_loss_function(y, y_hat):
 
     if c.fine_tuning == 'EQUALITY':
         tau = 1e-2
-        y_hat_normed = (y_hat + 1e-8) / tf.reshape(tf.norm(y_hat, ord=2, axis=1), (c.batch_size, 1))
+        y_hat_normed = y_hat / (tf.reshape(tf.norm(y_hat, ord=2, axis=1), (c.batch_size, 1)) + 1e-8)
         arr = np.arange(c.batch_size)
         y_hat_left, y_hat_right = tf.gather(y_hat_normed, arr[0::2]), tf.gather(y_hat_normed, arr[1::2])
         product = tf.matmul(y_hat_left, y_hat_right, transpose_b=True)

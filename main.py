@@ -782,8 +782,6 @@ def fine_tune_equality_inference(dataset, validation_file, buffer_size, blocks):
         return
 
     with c.strategy.scope():
-        s = open(validation_file, mode='w', encoding='utf-8')
-        row_format, batch_format = "{0}\t{1}\n", "B={0}\tA={1}\n"
         annoy_index, count = AnnoyIndex(c.hidden_size, "dot"), 0
 
         def persist_equality(batch, y_hat):
@@ -836,7 +834,6 @@ def fine_tune_equality_inference(dataset, validation_file, buffer_size, blocks):
                 printf("INFERENCE : {} ({:.3}%) L1 = {:.4} A1 = {:.4}", batch, percent, l1_mu, a1_mu)
         ##
         annoy_index.build(16)
-        annoy_index.save("tmp.ann")
         fail, ranks = 0, []
         for i in range(count):
             left_idx = 2 * i  # each sample consists of two sequences. even is left sequence
@@ -854,15 +851,11 @@ def fine_tune_equality_inference(dataset, validation_file, buffer_size, blocks):
         rank_format = "RANKS: mean {0:.3}, fails {1}, recall@1 {2:.3}, recall@10 {3:.3} recall@100 {4:.3}"
         print("")
         print(rank_format.format(ranks.mean(), fail, recall_at_1, recall_at_10, recall_at_100))
-
         ##
         l1_acc, a1_acc = l1_acc / batch, a1_acc / batch
-
         footer_format = "\nTEST : L1 = {:.4} : A1 = {:.4}"
         footer = footer_format.format(l1_acc, a1_acc)
-        s.write(footer)
         print(footer)
-        s.close()
 
     return
 

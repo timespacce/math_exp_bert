@@ -773,6 +773,9 @@ def fine_tune_equality_model():
 
 
 def fine_tune_equality_inference(dataset, validation_file, buffer_size, blocks):
+    ##
+    from annoy import AnnoyIndex
+    ##
     global c, model, data_loader, mask_loss, optimizer, ckpt_manager
 
     if not c.infer or buffer_size == 0:
@@ -780,10 +783,17 @@ def fine_tune_equality_inference(dataset, validation_file, buffer_size, blocks):
 
     with c.strategy.scope():
         s = open(validation_file, mode='w', encoding='utf-8')
-        row_format = "{0}\t{1}\n"
-        batch_format = "B={0}\tA={1}\n"
+        row_format, batch_format = "{0}\t{1}\n", "B={0}\tA={1}\n"
+        annoy_index, count = AnnoyIndex(c.hidden_size, "dot"), 0
 
         def persist_equality(batch, y_hat):
+            nonlocal count
+            y_hat_left, y_hat_right = tf.gather(y_hat, np.arange(c.batch_size)[0::2]), tf.gather(y_hat, np.arange(c.batch_size)[1::2])
+            y_hat_left, y_hat_right = y_hat_left.numpy(), y_hat_right.numpy()
+            for y_left_sample, y_right_sample in zip(y_hat_left, y_hat_right):
+                annoy_index.add_item(count * 2, y_left_sample)
+                annoy_index.add_item(count * 2 + 1, y_right_sample)
+                count += 1
             return
 
         @tf.function
@@ -824,7 +834,28 @@ def fine_tune_equality_inference(dataset, validation_file, buffer_size, blocks):
                 persist_equality(batch, y_hat)
                 #
                 printf("INFERENCE : {} ({:.3}%) L1 = {:.4} A1 = {:.4}", batch, percent, l1_mu, a1_mu)
+        ##
+        annoy_index.build(16)
+        annoy_index.save("tmp.ann")
+        fail, ranks = 0, []
+        for i in range(count):
+            left_idx = 2 * i  # each sample consists of two sequences. even is left sequence
+            all_results = annoy_index.get_nns_by_item(left_idx, 1000)[1:]
+            correct_results = np.array(all_results) == left_idx + 1
+            rank = np.argwhere(correct_results)  # index of correct answer relative to other correct answers. 0 - best; INF - high deviation
+            if not len(rank):
+                fail += 1
+            else:
+                ranks.append(rank[0])
+        ranks = np.array(ranks)
+        recall_at_1 = (ranks < 1).sum() / (1.0 * len(ranks) + fail)  # correct answer among the first 1
+        recall_at_10 = (ranks < 10).sum() / (1.0 * len(ranks) + fail)  # correct answer among the first 10
+        recall_at_100 = (ranks < 100).sum() / (1.0 * len(ranks) + fail)  # correct answer among the first 100
+        print("")
+        print("RANKS: mean {}, fails {}, recall@1 {}, recall@10 {} recall@100 {}".format(ranks.mean(), fail, recall_at_1, recall_at_10,
+                                                                                         recall_at_100))
 
+        ##
         l1_acc, a1_acc = l1_acc / batch, a1_acc / batch
 
         footer_format = "\nTEST : L1 = {:.4} : A1 = {:.4}"

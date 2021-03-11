@@ -217,6 +217,19 @@ class DataLoader:
         xls_seg = self.load_from_buffer(xl_seg_s, self.c.max_seq_len * count, (-1, self.c.max_seq_len), np.int32)
         xrs_seg = self.load_from_buffer(xr_seg_s, self.c.max_seq_len * count, (-1, self.c.max_seq_len), np.int32)
 
+        ##
+
+        randomize = np.arange(count)
+        np.random.shuffle(randomize)
+        xls = xls[randomize]
+        xrs = xrs[randomize]
+        xls_id = xls_id[randomize]
+        xrs_id = xrs_id[randomize]
+        xls_seg = xls_seg[randomize]
+        xrs_seg = xrs_seg[randomize]
+
+        ##
+
         xlrs = np.insert(xrs, np.arange(xls.shape[0]), xls, axis=0)
         xlrs = xlrs.reshape((-1, self.c.max_seq_len))
         xlrs_id = np.insert(xrs_id, np.arange(xls_id.shape[0]), xls_id, axis=0)

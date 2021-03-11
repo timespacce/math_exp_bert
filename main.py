@@ -738,11 +738,7 @@ def fine_tune_equality_model():
             tr_l1_acc, tr_a1_acc, tr_step = 0, 0, 0
 
             for block_id in range(c.train_blocks):
-                if c.train_blocks > 1:
-                    tf_train_dataset = load_train_block(block_id)
-                else:
-                    if e <= 0:
-                        tf_train_dataset = load_train_block(block_id)
+                tf_train_dataset = load_train_block(block_id)
 
                 for (xlr, xlr_id, xlr_seg) in tf_train_dataset:
                     l1, a1 = distributed_train_step(xlr, xlr_id, xlr_seg)

@@ -384,7 +384,7 @@ def fine_tune_loss_function(y, y_hat):
     if c.fine_tuning == 'EQUALITY':
         Q = y_hat.shape[0]
         tau = 1e-2
-        y_hat_normed = y_hat / (tf.reshape(tf.norm(y_hat, ord=2, axis=1), (c.batch_size, 1)) + 1e-8)
+        y_hat_normed = y_hat / (tf.reshape(tf.norm(y_hat, ord=2, axis=1), (Q, 1)) + 1e-8)
         arr = np.arange(Q)
         y_hat_left, y_hat_right = tf.gather(y_hat_normed, arr[0::2]), tf.gather(y_hat_normed, arr[1::2])
         product = tf.matmul(y_hat_left, y_hat_right, transpose_b=True)
@@ -788,8 +788,9 @@ def fine_tune_equality_inference(dataset, validation_file, buffer_size, blocks):
 
         def persist_equality(batch, y_hat):
             nonlocal count
-            y_hat_normed = (y_hat + 1e-8) / tf.reshape(tf.norm(y_hat, ord=2, axis=1), (c.batch_size, 1))
-            arr = np.arange(c.batch_size)
+            Q = y_hat.shape[0]
+            y_hat_normed = (y_hat + 1e-8) / tf.reshape(tf.norm(y_hat, ord=2, axis=1), (Q, 1))
+            arr = np.arange(Q)
             y_hat_left, y_hat_right = tf.gather(y_hat_normed, arr[0::2]), tf.gather(y_hat_normed, arr[1::2])
             y_hat_left, y_hat_right = y_hat_left.numpy(), y_hat_right.numpy()
             for y_left_sample, y_right_sample in zip(y_hat_left, y_hat_right):

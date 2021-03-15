@@ -788,7 +788,7 @@ def fine_tune_equality_inference(dataset, validation_file, buffer_size, blocks):
 
         def persist_equality(batch, y_hat):
             nonlocal count
-            Q = y_hat.shape[0]
+            Q = y_hat.values.shape[0]
             y_hat_normed = (y_hat + 1e-8) / tf.reshape(tf.norm(y_hat, ord=2, axis=1), (Q, 1))
             arr = np.arange(Q)
             y_hat_left, y_hat_right = tf.gather(y_hat_normed, arr[0::2]), tf.gather(y_hat_normed, arr[1::2])

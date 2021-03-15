@@ -788,15 +788,17 @@ def fine_tune_equality_inference(dataset, validation_file, buffer_size, blocks):
 
         def persist_equality(batch, y_hat):
             nonlocal count
-            Q = y_hat.values.shape[0]
-            y_hat_normed = (y_hat + 1e-8) / tf.reshape(tf.norm(y_hat, ord=2, axis=1), (Q, 1))
-            arr = np.arange(Q)
-            y_hat_left, y_hat_right = tf.gather(y_hat_normed, arr[0::2]), tf.gather(y_hat_normed, arr[1::2])
-            y_hat_left, y_hat_right = y_hat_left.numpy(), y_hat_right.numpy()
-            for y_left_sample, y_right_sample in zip(y_hat_left, y_hat_right):
-                annoy_index.add_item(count * 2, y_left_sample)
-                annoy_index.add_item(count * 2 + 1, y_right_sample)
-                count += 1
+            tensors = y_hat.values
+            for tensor in tensors:
+                Q = tensor.shape[0]
+                y_hat_normed = (y_hat + 1e-8) / tf.reshape(tf.norm(y_hat, ord=2, axis=1), (Q, 1))
+                arr = np.arange(Q)
+                y_hat_left, y_hat_right = tf.gather(y_hat_normed, arr[0::2]), tf.gather(y_hat_normed, arr[1::2])
+                y_hat_left, y_hat_right = y_hat_left.numpy(), y_hat_right.numpy()
+                for y_left_sample, y_right_sample in zip(y_hat_left, y_hat_right):
+                    annoy_index.add_item(count * 2, y_left_sample)
+                    annoy_index.add_item(count * 2 + 1, y_right_sample)
+                    count += 1
             return
 
         @tf.function

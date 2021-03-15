@@ -414,7 +414,8 @@ def fine_tune_accuracy_function(y, y_hat):
         return dc_accuracy
 
     if c.fine_tuning == 'EQUALITY':
-        y_hat_left, y_hat_right = tf.gather(y_hat, np.arange(c.batch_size)[0::2]), tf.gather(y_hat, np.arange(c.batch_size)[1::2])
+        Q = y_hat.shape[0]
+        y_hat_left, y_hat_right = tf.gather(y_hat, np.arange(Q)[0::2]), tf.gather(y_hat, np.arange(Q)[1::2])
         product = tf.matmul(y_hat_left, y_hat_right, transpose_b=True)
         product = tf.nn.softmax(product, axis=1)
         labels = tf.eye(c.batch_size // 2)

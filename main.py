@@ -816,8 +816,8 @@ def fine_tune_equality_inference(dataset, validation_file, buffer_size, blocks):
             if not replicated:
                 return y_hat, l1, a1
 
-            acc_l1 = tf.reduce_sum(l1.values, axis=-1) / c.gpu_count
-            acc_a1 = tf.reduce_sum(a1.values, axis=-1) / c.gpu_count
+            acc_l1 = tf.reduce_sum(l1.values, axis=-1) / c.strategy.num_replicas_in_sync
+            acc_a1 = tf.reduce_sum(a1.values, axis=-1) / c.strategy.num_replicas_in_sync
 
             return y_hat, acc_l1, acc_a1
 

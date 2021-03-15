@@ -382,13 +382,14 @@ def fine_tune_loss_function(y, y_hat):
         token_loss_ps = tf.reduce_sum(token_loss_ps)
 
     if c.fine_tuning == 'EQUALITY':
+        Q = y_hat.shape[0]
         tau = 1e-2
         y_hat_normed = y_hat / (tf.reshape(tf.norm(y_hat, ord=2, axis=1), (c.batch_size, 1)) + 1e-8)
-        arr = np.arange(c.batch_size)
+        arr = np.arange(Q)
         y_hat_left, y_hat_right = tf.gather(y_hat_normed, arr[0::2]), tf.gather(y_hat_normed, arr[1::2])
         product = tf.matmul(y_hat_left, y_hat_right, transpose_b=True)
         product = product / tau
-        labels = tf.eye(c.batch_size // 2)
+        labels = tf.eye(Q // 2)
         product = tf.nn.softmax(product, axis=1)
         contrastive_loss = sp_loss_func(labels, product)
         token_loss_ps = tf.reduce_mean(contrastive_loss)
@@ -418,7 +419,7 @@ def fine_tune_accuracy_function(y, y_hat):
         y_hat_left, y_hat_right = tf.gather(y_hat, np.arange(Q)[0::2]), tf.gather(y_hat, np.arange(Q)[1::2])
         product = tf.matmul(y_hat_left, y_hat_right, transpose_b=True)
         product = tf.nn.softmax(product, axis=1)
-        labels = tf.eye(c.batch_size // 2)
+        labels = tf.eye(Q // 2)
         one_hot = tf.round(product)
         pro_sample_diff = tf.reduce_sum(tf.abs(one_hot - labels), axis=1)
         pro_sample_diff = pro_sample_diff / 2

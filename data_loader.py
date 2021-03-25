@@ -169,6 +169,13 @@ class DataLoader:
         ys = ys.reshape(ys_shape)
         ys_s.close()
 
+        randomize = np.arange(count)
+        np.random.shuffle(randomize)
+        xs = xs[randomize]
+        xs_id = xs_id[randomize]
+        xs_seg = xs_seg[randomize]
+        ys = ys[randomize]
+
         if xs.shape[0] != xs_id.shape[0] != xs_seg.shape[0]:
             print("XS LEN is not correct.")
             exit()

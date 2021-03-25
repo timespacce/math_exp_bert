@@ -443,7 +443,7 @@ def fine_tune_derivation_model():
 
                 with tf.GradientTape() as tape:
                     x_enc = model(x, enc_padding_mask, x_seg)
-                    y_hat = model.classify(x_enc=x_enc, mode=c.fine_tuning)
+                    y_hat = model.fine_tune_classify(x_enc=x_enc, mode=c.fine_tuning)
                     loss = fine_tune_loss_function(y=y, y_hat=y_hat)
                     mask_accuracy = fine_tune_accuracy_function(y=y, y_hat=y_hat)
 
@@ -470,7 +470,7 @@ def fine_tune_derivation_model():
                 enc_padding_mask = create_mask(x_id)
 
                 x_enc = model(x, enc_padding_mask, x_seg)
-                y_hat = model.classify(x_enc=x_enc, mode=c.fine_tuning)
+                y_hat = model.fine_tune_classify(x_enc=x_enc, mode=c.fine_tuning)
                 loss = fine_tune_loss_function(y=y, y_hat=y_hat)
                 mask_accuracy = fine_tune_accuracy_function(y=y, y_hat=y_hat)
 

@@ -787,9 +787,9 @@ def fine_tune_equality_inference(dataset, validation_file, buffer_size, blocks):
         annoy_index, count = AnnoyIndex(c.hidden_size, "dot"), 0
 
         def persist_equality(batch, y_hat):
-            nonlocal count
-            tensors = y_hat.values
-            for tensor in tensors:
+            def pro_batch_function(tensor):
+                nonlocal count
+                ##
                 Q = tensor.shape[0]
                 y_hat_normed = (tensor + 1e-8) / tf.reshape(tf.norm(tensor, ord=2, axis=1), (Q, 1))
                 arr = np.arange(Q)
@@ -799,6 +799,15 @@ def fine_tune_equality_inference(dataset, validation_file, buffer_size, blocks):
                     annoy_index.add_item(count * 2, y_left_sample)
                     annoy_index.add_item(count * 2 + 1, y_right_sample)
                     count += 1
+
+            ##
+            replicated = c.strategy.num_replicas_in_sync > 1
+            if replicated:
+                tensors = y_hat.values
+                for tensor in tensors:
+                    pro_batch_function(tensor)
+            else:
+                pro_batch_function(y_hat)
             return
 
         @tf.function
